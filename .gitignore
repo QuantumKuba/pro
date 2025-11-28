@@ -3,3 +3,4 @@
 /website
 /docs/.vitepress/cache.env
 .env
+.DS_Store
