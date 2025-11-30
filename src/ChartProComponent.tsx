@@ -17,7 +17,7 @@ import { createSignal, createEffect, onMount, Show, onCleanup, startTransition, 
 import {
   init, dispose, utils, Nullable, Chart, OverlayMode, Styles,
   ActionType, PaneOptions, Indicator, DomPosition, FormatDateType,
-  FormatDateParams,
+  FormatDateParams, FormatExtendTextParams,
   TooltipFeatureStyle,
   IndicatorTooltipData,
   FeatureType
@@ -182,6 +182,34 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
             }
           }
           return utils.formatDate(params.dateTimeFormat, params.timestamp, 'YYYY-MM-DD HH:mm')
+        },
+        formatExtendText: (params: FormatExtendTextParams) => {
+          if (params.type === 'last_price') {
+            const p = period()
+            if (!p) return ''
+            const current = Date.now()
+            const timestamp = params.data.timestamp
+            let periodMs = 0
+            switch (p.type) {
+              case 'minute': periodMs = p.span * 60 * 1000; break
+              case 'hour': periodMs = p.span * 60 * 60 * 1000; break
+              case 'day': periodMs = p.span * 24 * 60 * 60 * 1000; break
+              case 'week': periodMs = p.span * 7 * 24 * 60 * 60 * 1000; break
+              case 'month': periodMs = p.span * 30 * 24 * 60 * 60 * 1000; break
+              case 'year': periodMs = p.span * 365 * 24 * 60 * 60 * 1000; break
+            }
+            const next = timestamp + periodMs
+            const remaining = Math.max(0, next - current)
+            
+            const totalSeconds = Math.floor(remaining / 1000)
+            const hours = Math.floor(totalSeconds / 3600)
+            const minutes = Math.floor((totalSeconds % 3600) / 60)
+            const seconds = totalSeconds % 60
+            
+            const pad = (n: number) => n.toString().padStart(2, '0')
+            return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+          }
+          return ''
         }
       }
     }))
@@ -325,6 +353,27 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
     widget()?.setStyles(t)
     const color = t === 'dark' ? '#929AA5' : '#76808F'
     widget()?.setStyles({
+      candle: {
+        priceMark: {
+          last: {
+            extendTexts: [
+              {
+                show: true,
+                color: '#e7e7e7ff',
+                size: 12,
+                family: 'Helvetica Neue',
+                weight: 'normal',
+                position: 'below_price',
+                updateInterval: 800,
+                paddingLeft: 2,
+                paddingTop: 2,
+                paddingRight: 2,
+                paddingBottom: 2
+              }
+            ]
+          }
+        }
+      },
       indicator: {
         tooltip: {
           features: [
