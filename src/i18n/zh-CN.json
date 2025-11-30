@@ -102,6 +102,13 @@
   "params_4": "参数4",
   "params_5": "参数5",
   "period": "周期",
+  "custom_period": "自定义周期",
+  "minute": "分",
+  "hour": "小时",
+  "day": "天",
+  "week": "周",
+  "month": "月",
+  "year": "年",
   "standard_deviation": "标准差",
 
   "candle_type": "蜡烛图类型",

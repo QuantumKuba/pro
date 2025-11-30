@@ -30,7 +30,7 @@ import { SelectDataSourceItem, Loading } from './component'
 
 import {
   PeriodBar, DrawingBar, IndicatorModal, TimezoneModal, SettingModal,
-  ScreenshotModal, IndicatorSettingModal, SymbolSearchModal
+  ScreenshotModal, IndicatorSettingModal, SymbolSearchModal, PeriodSettingModal
 } from './widget'
 
 import { translateTimezone } from './widget/timezone-modal/data'
@@ -126,6 +126,8 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
   const [drawingBarVisible, setDrawingBarVisible] = createSignal(props.drawingBarVisible)
 
   const [symbolSearchModalVisible, setSymbolSearchModalVisible] = createSignal(false)
+
+  const [periodSettingModalVisible, setPeriodSettingModalVisible] = createSignal(false)
 
   const [indicatorSettingModalParams, setIndicatorSettingModalParams] = createSignal({
     visible: false, indicatorName: '', paneId: '', calcParams: [] as Array<any>
@@ -588,6 +590,14 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
           }}
         />
       </Show>
+      <Show when={periodSettingModalVisible()}>
+        <PeriodSettingModal
+          locale={locale()}
+          onClose={() => { setPeriodSettingModalVisible(false) }}
+          onConfirm={p => {
+            setPeriod(p)
+          }}/>
+      </Show>
       <PeriodBar
         locale={locale()}
         symbol={symbol()!}
@@ -611,6 +621,7 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
             setScreenshotUrl(url)
           }
         }}
+        onPeriodSettingClick={() => { setPeriodSettingModalVisible(true) }}
       />
       <div
         class="klinecharts-pro-content">

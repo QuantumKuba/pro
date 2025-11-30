@@ -31,6 +31,7 @@ export interface PeriodBarProps {
   onTimezoneClick: () => void
   onSettingClick: () => void
   onScreenshotClick: () => void
+  onPeriodSettingClick: () => void
 }
 
 const PeriodBar: Component<PeriodBarProps> = props => {
@@ -87,6 +88,13 @@ const PeriodBar: Component<PeriodBarProps> = props => {
           </span>
         ))
       }
+      <span
+        class="item period"
+        onClick={props.onPeriodSettingClick}>
+        <svg viewBox="0 0 1024 1024" width="12" height="12" style={{ "margin-top": "2px" }}>
+          <path d="M925.696 384q19.456 0 37.376 7.68t30.72 20.48 20.48 30.72 7.68 37.376q0 20.48-7.68 37.376t-20.48 30.72-30.72 20.48-37.376 7.68l-287.744 0 0 287.744q0 19.456-7.68 37.376t-20.48 30.72-30.72 20.48-37.376 7.68q-20.48 0-37.376-7.68t-30.72-20.48-20.48-30.72-7.68-37.376l0-287.744-287.744 0q-19.456 0-37.376-7.68t-30.72-20.48-20.48-30.72-7.68-37.376q0-20.48 7.68-37.376t20.48-30.72 30.72-20.48 37.376-7.68l287.744 0 0-287.744q0-19.456 7.68-37.376t20.48-30.72 30.72-20.48 37.376-7.68q20.48 0 37.376 7.68t30.72 20.48 20.48 30.72 7.68 37.376l0 287.744 287.744 0z" />
+        </svg>
+      </span>
       <div
         class='item tools'
         onClick={props.onIndicatorClick}>
