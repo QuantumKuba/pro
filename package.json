@@ -28,10 +28,10 @@
   "license": "Apache-2.0",
   "private": false,
   "scripts": {
+    "dev": "vite --config dev/vite.config.ts --host",
     "build-core": "tsc && vite build",
     "build-dts": "dts-bundle-generator --no-banner true --umd-module-name klinechartspro -o dist/index.d.ts src/index.ts",
     "build": "npm run build-core && npm run build-dts",
-    "dev": "cd dev && vite --config ../vite.config.ts",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
@@ -64,6 +64,6 @@
     "solid-js": "^1.6.11"
   },
   "peerDependencies": {
-    "klinecharts": ">=9.0.0"
+    "klinecharts": "^10.0.0-beta1"
   }
 }
