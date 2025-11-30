@@ -48,7 +48,7 @@ export default class KLineChartPro implements ChartPro {
         <ChartProComponent
           ref={(chart: ChartPro) => { this._chartApi = chart }}
           styles={options.styles ?? {}}
-          watermark={options.watermark ?? (Logo as Node)}
+          watermark={options.watermark ?? ''}
           theme={options.theme ?? 'light'}
           locale={options.locale ?? 'zh-CN'}
           drawingBarVisible={options.drawingBarVisible ?? true}
