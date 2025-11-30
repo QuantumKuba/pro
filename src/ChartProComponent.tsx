@@ -502,14 +502,14 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
       <i class="icon-close klinecharts-pro-load-icon"/>
       <Show when={symbolSearchModalVisible()}>
         <SymbolSearchModal
-          locale={props.locale}
+          locale={locale()}
           datafeed={props.dataloader}
           onSymbolSelected={symbol => { setSymbol(symbol) }}
           onClose={() => { setSymbolSearchModalVisible(false) }}/>
       </Show>
       <Show when={indicatorModalVisible()}>
         <IndicatorModal
-          locale={props.locale}
+          locale={locale()}
           mainIndicators={mainIndicators()}
           subIndicators={subIndicators()}
           onClose={() => { setIndicatorModalVisible(false) }}
@@ -545,7 +545,7 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
       </Show>
       <Show when={timezoneModalVisible()}>
         <TimezoneModal
-          locale={props.locale}
+          locale={locale()}
           timezone={timezone()}
           onClose={() => { setTimezoneModalVisible(false) }}
           onConfirm={setTimezone}
@@ -553,12 +553,13 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
       </Show>
       <Show when={settingModalVisible()}>
         <SettingModal
-          locale={props.locale}
+          locale={locale()}
           currentStyles={utils.clone(widget()!.getStyles())}
           onClose={() => { setSettingModalVisible(false) }}
           onChange={style => {
             widget()?.setStyles(style)
           }}
+          onLocaleChange={setLocale}
           onRestoreDefault={(options: SelectDataSourceItem[]) => {
             const style = {}
             options.forEach(option => {
@@ -571,14 +572,14 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
       </Show>
       <Show when={screenshotUrl().length > 0}>
         <ScreenshotModal
-          locale={props.locale}
+          locale={locale()}
           url={screenshotUrl()}
           onClose={() => { setScreenshotUrl('') }}
         />
       </Show>
       <Show when={indicatorSettingModalParams().visible}>
         <IndicatorSettingModal
-          locale={props.locale}
+          locale={locale()}
           params={indicatorSettingModalParams()}
           onClose={() => { setIndicatorSettingModalParams({ visible: false, indicatorName: '', paneId: '', calcParams: [] }) }}
           onConfirm={(params)=> {
@@ -588,7 +589,7 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
         />
       </Show>
       <PeriodBar
-        locale={props.locale}
+        locale={locale()}
         symbol={symbol()!}
         spread={drawingBarVisible()}
         period={period()!}

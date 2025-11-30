@@ -28,6 +28,7 @@ export interface SettingModalProps {
   currentStyles: Styles
   onClose: () => void
   onChange: (style: DeepPartial<Styles>) => void
+  onLocaleChange: (locale: string) => void
   onRestoreDefault: (options: SelectDataSourceItem[]) => void
 }
 
@@ -65,6 +66,17 @@ const SettingModal: Component<SettingModalProps> = props => {
       onClose={props.onClose}>
       <div
         class="klinecharts-pro-setting-modal-content">
+        <span>{i18n('language', props.locale)}</span>
+        <Select
+          style={{ width: '120px' }}
+          value={props.locale === 'zh-CN' ? '简体中文' : 'English'}
+          dataSource={[
+            { key: 'zh-CN', text: '简体中文' },
+            { key: 'en-US', text: 'English' }
+          ]}
+          onSelected={(data) => {
+            props.onLocaleChange((data as SelectDataSourceItem).key)
+          }}/>
         <For each={options()}>
           {
             option => {
