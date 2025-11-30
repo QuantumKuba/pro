@@ -76,9 +76,17 @@ function createIndicator (widget: Chart, indicatorName: string, isStack?: boolea
         icons.push(features[2])
         icons.push(features[3])
       }
+      const calcParams = param.indicator.calcParams
+      const joinedString = calcParams.map((item: any) => {
+        if (typeof item === 'object' && item !== null && 'value' in item) {
+          return item.value
+        }
+        return item
+      }).join(', ')
+      const calcParamsText = ` ${joinedString}`
       return {
-        name: `${indicatorName}_${indi}`,
-        calcParamsText: indicatorName,
+        name: indicatorName,
+        calcParamsText,
         features: icons,
         legends: []
       }
