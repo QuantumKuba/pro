@@ -50,8 +50,16 @@ interface PrevSymbolPeriod {
 }
 
 function createIndicator (widget: Chart, indicatorName: string, isStack?: boolean, paneOptions?: PaneOptions): Nullable<string> {
+  // VOL should never be on the candle_pane - it needs its own pane for proper scaling
   if (indicatorName === 'VOL') {
-    paneOptions = { axis: { gap: { bottom: 2 } }, ...paneOptions }
+    // Remove id if it was set to candle_pane, and add gap for VOL pane
+    const { id, ...restPaneOptions } = paneOptions || {}
+    paneOptions = { 
+      axis: { gap: { bottom: 2 } }, 
+      ...restPaneOptions,
+      // Only keep the id if it's NOT candle_pane
+      ...(id && id !== 'candle_pane' ? { id } : {})
+    }
   }
   const indi =  widget.createIndicator({
     name: indicatorName,
