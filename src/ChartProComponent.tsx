@@ -338,7 +338,7 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
       const s = symbol()
       const p = period()
 
-      if (prev?.period.span !== p!.span && prev?.period.type !== p!.type) {
+      if (prev?.period.span !== p!.span || prev?.period.type !== p!.type) {
         console.info('period changed: set period', p)
         widget()?.setPeriod(p!)
       }
