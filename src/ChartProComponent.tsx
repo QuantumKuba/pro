@@ -207,7 +207,10 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
             const seconds = totalSeconds % 60
             
             const pad = (n: number) => n.toString().padStart(2, '0')
-            return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+            if (periodMs >= 60 * 60 * 1000) {
+              return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+            }
+            return `${pad(minutes)}:${pad(seconds)}`
           }
           return ''
         }
