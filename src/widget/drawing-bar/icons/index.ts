@@ -44,6 +44,7 @@ import eightWaves from './eightWaves'
 import anyWaves from './anyWaves'
 import abcd from './abcd'
 import xabcd from './xabcd'
+import measure from './measure'
 
 import weakMagnet from './weakMagnet'
 import strongMagnet from './strongMagnet'
@@ -91,6 +92,7 @@ export const mapping = {
   anyWaves,
   abcd,
   xabcd,
+  measure,
   weak_magnet: weakMagnet,
   strong_magnet: strongMagnet,
   lock,
@@ -113,6 +115,12 @@ export function createSingleLineOptions (locale: string): SelectDataSourceItem[]
     { key: 'segment', text: i18n('segment', locale) },
     { key: 'arrow', text: i18n('arrow', locale) },
     { key: 'priceLine', text: i18n('price_line', locale) }
+  ]
+}
+
+export function createMeasureOptions (locale: string): SelectDataSourceItem[] {
+  return [
+    { key: 'measure', text: i18n('measure', locale) }
   ]
 }
 
