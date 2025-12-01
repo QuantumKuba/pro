@@ -78,6 +78,8 @@
   "fibonacci_extension": "Fibonacci Extension",
   "gann_box": "Gann Box",
   "rect": "Rect",
+  "rotated_rect": "Rotated Rectangle",
+  "brush": "Brush",
   "parallelogram": "Parallelogram",
   "circle": "Circle",
   "triangle": "Triangle",

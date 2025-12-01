@@ -17,13 +17,16 @@ import anyWaves from './anyWaves'
 import abcd from './abcd'
 import xabcd from './xabcd'
 import measure from './measure'
+import rotatedRect from './rotatedRect'
+import brush from './brush'
 
 const overlays = [
   arrow,
   circle, rect, triangle, parallelogram,
   fibonacciCircle, fibonacciSegment, fibonacciSpiral,
   fibonacciSpeedResistanceFan, fibonacciExtension, gannBox,
-  threeWaves, fiveWaves, eightWaves, anyWaves, abcd, xabcd, measure
+  threeWaves, fiveWaves, eightWaves, anyWaves, abcd, xabcd, measure,
+  rotatedRect, brush
 ]
 
 export default overlays

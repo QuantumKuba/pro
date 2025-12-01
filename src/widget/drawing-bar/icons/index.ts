@@ -45,6 +45,8 @@ import anyWaves from './anyWaves'
 import abcd from './abcd'
 import xabcd from './xabcd'
 import measure from './measure'
+import rotatedRect from './rotatedRect'
+import brush from './brush'
 
 import weakMagnet from './weakMagnet'
 import strongMagnet from './strongMagnet'
@@ -93,6 +95,8 @@ export const mapping = {
   abcd,
   xabcd,
   measure,
+  rotatedRect,
+  brush,
   weak_magnet: weakMagnet,
   strong_magnet: strongMagnet,
   lock,
@@ -134,9 +138,16 @@ export function createMoreLineOptions (locale: string): SelectDataSourceItem[] {
 export function createPolygonOptions (locale: string): SelectDataSourceItem[] {
   return [
     { key: 'circle', text: i18n('circle', locale) },
-    { key: 'rect', text: i18n('rect', locale) },
     { key: 'parallelogram', text: i18n('parallelogram', locale) },
     { key: 'triangle', text: i18n('triangle', locale) }
+  ]
+}
+
+export function createDrawingOptions (locale: string): SelectDataSourceItem[] {
+  return [
+    { key: 'rect', text: i18n('rect', locale) },
+    { key: 'rotatedRect', text: i18n('rotated_rect', locale) },
+    { key: 'brush', text: i18n('brush', locale) }
   ]
 }
 

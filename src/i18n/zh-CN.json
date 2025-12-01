@@ -81,6 +81,8 @@
   "fibonacci_extension": "斐波那契趋势扩展",
   "gann_box": "江恩箱",
   "rect": "矩形",
+  "rotated_rect": "旋转矩形",
+  "brush": "画笔",
   "parallelogram": "平行四边形",
   "circle": "圆",
   "triangle": "三角形",
