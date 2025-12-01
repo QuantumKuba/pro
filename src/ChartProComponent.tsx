@@ -631,7 +631,36 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
         <Show when={drawingBarVisible()}>
           <DrawingBar
             locale={props.locale}
-            onDrawingItemClick={overlay => { widget()?.createOverlay(overlay) }}
+            onDrawingItemClick={overlay => { 
+              // Ensure overlays created from the drawing bar belong to the drawing group
+              const DEFAULT_GROUP_ID = 'drawing_tools'
+
+              if (typeof overlay === 'object') {
+                const withGroup = { groupId: (overlay as any).groupId ?? DEFAULT_GROUP_ID, ...(overlay as any) }
+
+                // Special handling for brush tool - it needs continuous point adding
+                if (withGroup.name === 'brush') {
+                  widget()?.createOverlay({
+                    ...withGroup,
+                    onDrawing: ({ overlay: brushOverlay }) => {
+                      // Only add points after the first click (currentStep > 1)
+                      // @ts-expect-error - accessing internal properties
+                      if (brushOverlay.currentStep > 1) {
+                        // Advance to next step on each mouse move to add points continuously
+                        // @ts-expect-error - accessing internal method
+                        brushOverlay.nextStep?.()
+                      }
+                    }
+                  })
+                  return
+                }
+
+                widget()?.createOverlay(withGroup)
+                return
+              }
+
+              widget()?.createOverlay(overlay)
+            }}
             onModeChange={mode => { widget()?.overrideOverlay({ mode: mode as OverlayMode }) }}
             onLockChange={lock => { widget()?.overrideOverlay({ lock }) }}
             onVisibleChange={visible => { widget()?.overrideOverlay({ visible }) }}
