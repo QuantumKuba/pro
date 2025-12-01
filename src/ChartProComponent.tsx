@@ -15,12 +15,13 @@
 import { createSignal, createEffect, onMount, Show, onCleanup, startTransition, Component } from 'solid-js'
 
 import {
-  init, dispose, utils, Nullable, Chart, OverlayMode, Styles,
+  init, dispose, utils, Nullable, Chart, OverlayMode, Styles, DeepPartial,
   ActionType, PaneOptions, Indicator, DomPosition, FormatDateType,
   FormatDateParams, FormatExtendTextParams,
   TooltipFeatureStyle,
   IndicatorTooltipData,
-  FeatureType
+  FeatureType,
+  registerYAxis
 } from 'klinecharts'
 
 import lodashSet from 'lodash/set'
@@ -37,7 +38,252 @@ import { translateTimezone } from './widget/timezone-modal/data'
 
 import { SymbolInfo, Period, ChartProOptions, ChartPro } from './types'
 import ChartDataLoader from './DataLoader'
-import { filter, set } from 'lodash'
+
+type AxisType = 'normal' | 'percentage' | 'log'
+
+interface AxisSettings {
+  type: AxisType
+  reverse: boolean
+}
+
+interface AxisRange {
+  from: number
+  to: number
+  range: number
+  realFrom: number
+  realTo: number
+  realRange: number
+  displayFrom: number
+  displayTo: number
+  displayRange: number
+}
+
+interface AxisCreateRangeParams {
+  chart: Chart
+  paneId: string
+  defaultRange: AxisRange
+}
+
+interface AxisTick {
+  coord: number
+  value: number | string
+  text: string
+}
+
+interface AxisCreateTicksParams {
+  defaultTicks: AxisTick[]
+  range: AxisRange
+}
+
+const DEFAULT_AXIS_SETTINGS: AxisSettings = { type: 'normal', reverse: false }
+const NORMAL_AXIS_NAME = 'normal'
+const LOG_AXIS_NAME = 'logarithm'
+const PERCENTAGE_AXIS_NAME = 'klinecharts_pro_percentage'
+
+let percentageAxisRegistered = false
+
+const isAxisType = (value: unknown): value is AxisType => value === 'normal' || value === 'percentage' || value === 'log'
+
+const formatPercentLabel = (value: number): string => {
+  if (!Number.isFinite(value)) {
+    return '--'
+  }
+  const prefix = value > 0 ? '+' : value < 0 ? '-' : ''
+  const magnitude = utils.formatPrecision(Math.abs(value), 2)
+  return `${prefix}${magnitude}%`
+}
+
+const extractAxisSettingsFromStyles = (styles?: DeepPartial<Styles>): AxisSettings => {
+  const rawType = (styles as any)?.yAxis?.type
+  const normalizedType = (() => {
+    if (rawType === 'logarithm') {
+      return 'log'
+    }
+    if (isAxisType(rawType)) {
+      return rawType
+    }
+    return DEFAULT_AXIS_SETTINGS.type
+  })()
+  const rawReverse = (styles as any)?.yAxis?.reverse
+  return {
+    type: normalizedType,
+    reverse: typeof rawReverse === 'boolean' ? rawReverse : DEFAULT_AXIS_SETTINGS.reverse
+  }
+}
+
+const stripAxisKeys = (styles?: DeepPartial<Styles>): DeepPartial<Styles> | undefined => {
+  if (!styles) {
+    return styles
+  }
+  const cloned = lodashClone(styles)
+  const axis = (cloned as any)?.yAxis
+  if (axis) {
+    delete axis.type
+    delete axis.reverse
+    if (axis && Object.keys(axis).length === 0) {
+      delete (cloned as any).yAxis
+    }
+  }
+  return cloned
+}
+
+const axisNameToType = (value: unknown): AxisType | undefined => {
+  if (!utils.isString(value)) {
+    return undefined
+  }
+  switch (value) {
+    case PERCENTAGE_AXIS_NAME:
+    case 'percentage':
+      return 'percentage'
+    case LOG_AXIS_NAME:
+    case 'log':
+      return 'log'
+    case NORMAL_AXIS_NAME:
+    case 'normal':
+      return 'normal'
+    default:
+      return undefined
+  }
+}
+
+const readAxisOverrides = (styles?: DeepPartial<Styles>): Partial<AxisSettings> | null => {
+  if (!styles) {
+    return null
+  }
+  const axis = (styles as any)?.yAxis
+  if (!axis) {
+    return null
+  }
+  const result: Partial<AxisSettings> = {}
+  if ('type' in axis && axis.type !== undefined) {
+    const parsed = axisNameToType(axis.type)
+    if (parsed) {
+      result.type = parsed
+    }
+  }
+  if ('reverse' in axis && axis.reverse !== undefined) {
+    result.reverse = Boolean(axis.reverse)
+  }
+  return Object.keys(result).length > 0 ? result : null
+}
+
+const axisTypeToTemplateName = (type: AxisType): string => {
+  switch (type) {
+    case 'percentage':
+      return PERCENTAGE_AXIS_NAME
+    case 'log':
+      return LOG_AXIS_NAME
+    default:
+      return NORMAL_AXIS_NAME
+  }
+}
+
+const computePercentageRange = (chart: Chart, defaultRange: AxisRange): AxisRange => {
+  const dataList = (chart as any).getDataList?.() as Array<Record<string, unknown>> | undefined
+  const visibleRange = chart.getVisibleRange?.()
+  if (!Array.isArray(dataList) || dataList.length === 0 || !visibleRange) {
+    return defaultRange
+  }
+  const start = Math.max(visibleRange.from, 0)
+  const end = Math.min(visibleRange.to, dataList.length - 1)
+  if (start > end) {
+    return defaultRange
+  }
+
+  let highest = Number.NEGATIVE_INFINITY
+  let lowest = Number.POSITIVE_INFINITY
+  for (let i = start; i <= end; i++) {
+    const data = dataList[i] ?? {}
+    const high = utils.isNumber(data.high) ? (data.high as number) : (utils.isNumber(data.close) ? (data.close as number) : undefined)
+    const low = utils.isNumber(data.low) ? (data.low as number) : (utils.isNumber(data.close) ? (data.close as number) : undefined)
+    if (typeof high === 'number') {
+      highest = Math.max(highest, high)
+    }
+    if (typeof low === 'number') {
+      lowest = Math.min(lowest, low)
+    }
+  }
+
+  if (!Number.isFinite(highest) || !Number.isFinite(lowest)) {
+    return defaultRange
+  }
+
+  const fallbackIndex = Number.isFinite(end) ? end : start
+  const referenceData = dataList[fallbackIndex] ?? dataList[start]
+  const currentPriceCandidate = [referenceData?.close, referenceData?.last, referenceData?.high, referenceData?.low, referenceData?.open].find(value => utils.isNumber(value))
+  const currentPrice = typeof currentPriceCandidate === 'number' ? currentPriceCandidate : undefined
+
+  if (!Number.isFinite(currentPrice) || currentPrice === 0) {
+    return defaultRange
+  }
+
+  let base = lowest
+  if (!Number.isFinite(base) || base === 0) {
+    base = Number.isFinite(highest) ? highest : base
+  }
+  if (!Number.isFinite(base) || base === 0) {
+    return defaultRange
+  }
+
+  const midpoint = (highest + lowest) / 2
+  if ((currentPrice as number) < midpoint) {
+    base = highest
+  } else {
+    base = lowest
+  }
+
+  if (!Number.isFinite(base) || base === 0) {
+    return defaultRange
+  }
+
+  const convert = (price: number) => ((price - base) / base) * 100
+  const realFrom = convert(defaultRange.from)
+  const realTo = convert(defaultRange.to)
+
+  if (!Number.isFinite(realFrom) || !Number.isFinite(realTo)) {
+    return defaultRange
+  }
+
+  const realRange = realTo - realFrom
+  if (realRange === 0) {
+    return defaultRange
+  }
+
+  return {
+    ...defaultRange,
+    realFrom,
+    realTo,
+    realRange,
+    displayFrom: realFrom,
+    displayTo: realTo,
+    displayRange: realRange
+  }
+}
+
+const ensurePercentageAxisRegistered = (): void => {
+  if (percentageAxisRegistered) {
+    return
+  }
+  registerYAxis({
+    name: PERCENTAGE_AXIS_NAME,
+    minSpan: () => Math.pow(10, -2),
+    displayValueToText: (value: number) => formatPercentLabel(value),
+    valueToRealValue: (value: number, { range }: { range: AxisRange }) => (value - range.from) / range.range * range.realRange + range.realFrom,
+    realValueToValue: (value: number, { range }: { range: AxisRange }) => (value - range.realFrom) / range.realRange * range.range + range.from,
+    realValueToDisplayValue: (value: number, { range }: { range: AxisRange }) => (value - range.realFrom) / range.realRange * range.displayRange + range.displayFrom,
+    displayValueToRealValue: (value: number, { range }: { range: AxisRange }) => (value - range.displayFrom) / range.displayRange * range.realRange + range.realFrom,
+    createRange: ({ chart, defaultRange }: AxisCreateRangeParams) => computePercentageRange(chart, defaultRange),
+    createTicks: ({ defaultTicks }: AxisCreateTicksParams) => defaultTicks.map(tick => {
+      const numeric = typeof tick.value === 'number' ? tick.value : Number(tick.value)
+      return {
+        ...tick,
+        value: numeric,
+        text: formatPercentLabel(numeric)
+      }
+    })
+  })
+  percentageAxisRegistered = true
+}
 
 export interface ChartProComponentProps extends Required<Omit<ChartProOptions, 'container' | 'datafeed'>> {
   ref: (chart: ChartPro) => void
@@ -108,8 +354,67 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
   let loading = false
 
   const [theme, setTheme] = createSignal(props.theme)
-  const [styles, setStyles] = createSignal(props.styles)
   const [locale, setLocale] = createSignal(props.locale)
+
+  const initialAxisSettings = extractAxisSettingsFromStyles(props.styles)
+  const defaultAxisSettings: AxisSettings = { ...initialAxisSettings }
+  const [axisSettings, setAxisSettings] = createSignal<AxisSettings>(initialAxisSettings)
+  const [styleOverrides, setStyleOverrides] = createSignal<DeepPartial<Styles> | undefined>(props.styles)
+
+  const applyAxisOverride = (override: Partial<AxisSettings>) => {
+    if (!override || (override.type === undefined && override.reverse === undefined)) {
+      return
+    }
+    setAxisSettings(prev => {
+      const next: AxisSettings = {
+        type: override.type ?? prev.type,
+        reverse: override.reverse ?? prev.reverse
+      }
+      if (next.type === prev.type && next.reverse === prev.reverse) {
+        return prev
+      }
+      return next
+    })
+  }
+
+  const updateAxisSettingsFromStyle = (style?: DeepPartial<Styles>) => {
+    const override = readAxisOverrides(style)
+    if (override) {
+      applyAxisOverride(override)
+    }
+  }
+
+  const applyAxisSettingsToChart = (chart: Chart, settings: AxisSettings) => {
+    if (settings.type === 'percentage') {
+      ensurePercentageAxisRegistered()
+    }
+    chart.setPaneOptions({
+      id: 'candle_pane',
+      axis: {
+        name: axisTypeToTemplateName(settings.type),
+        reverse: settings.reverse
+      }
+    })
+  }
+
+  const refreshPriceUnit = () => {
+    if (!priceUnitDom) {
+      return
+    }
+    const currentAxis = axisSettings()
+    if (currentAxis.type === 'percentage') {
+      priceUnitDom.innerHTML = '%'
+      priceUnitDom.style.display = 'flex'
+      return
+    }
+    const currentSymbol = symbol()
+    if (currentSymbol?.priceCurrency) {
+      priceUnitDom.innerHTML = currentSymbol.priceCurrency.toLocaleUpperCase()
+      priceUnitDom.style.display = 'flex'
+    } else {
+      priceUnitDom.style.display = 'none'
+    }
+  }
 
   const [indicatorModalVisible, setIndicatorModalVisible] = createSignal(false)
   const [mainIndicators, setMainIndicators] = createSignal([...(props.mainIndicators!)])
@@ -138,8 +443,20 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
   props.ref({
     setTheme,
     getTheme: () => theme(),
-    setStyles,
-    getStyles: () => widget()!.getStyles(),
+    setStyles: (style: DeepPartial<Styles>) => {
+      updateAxisSettingsFromStyle(style)
+      setStyleOverrides(() => style)
+    },
+    getStyles: () => {
+      const styles = utils.clone(widget()!.getStyles()) as any
+      const axis = axisSettings()
+      if (!styles.yAxis) {
+        styles.yAxis = {}
+      }
+      styles.yAxis.type = axis.type
+      styles.yAxis.reverse = axis.reverse
+      return styles
+    },
     setLocale,
     getLocale: () => locale(),
     setTimezone: (timezone: string) => { setTimezone({ key: timezone, text: translateTimezone(props.timezone, locale()) }) },
@@ -294,14 +611,11 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
         console.info('onCandleTooltipFeatureClick', data)
       })
 
+      refreshPriceUnit()
       const s = symbol()
-      if (s?.priceCurrency) {
-        priceUnitDom.innerHTML = s?.priceCurrency.toLocaleUpperCase()
-        priceUnitDom.style.display = 'flex'
-      } else {
-        priceUnitDom.style.display = 'none'
+      if (s) {
+        widget()?.setSymbol({ ticker: s.ticker, pricePrecision: s.pricePrecision ?? 2, volumePrecision: s.volumePrecision ?? 0 })
       }
-      widget()?.setSymbol({ ticker: s!.ticker, pricePrecision: s?.pricePrecision ?? 2, volumePrecision: s?.volumePrecision ?? 0 })
       widget()?.setPeriod(period()!)
       widget()?.setDataLoader(props.dataloader)
     }
@@ -362,10 +676,14 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
   })
 
   createEffect(() => {
+    const chart = widget()
+    if (!chart) {
+      return
+    }
     const t = theme()
-    widget()?.setStyles(t)
+    chart.setStyles(t)
     const color = t === 'dark' ? '#929AA5' : '#76808F'
-    widget()?.setStyles({
+    chart.setStyles({
       candle: {
         priceMark: {
           last: {
@@ -482,6 +800,7 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
         }
       }
     })
+    setWidgetDefaultStyles(lodashClone(chart.getStyles()))
   })
 
   createEffect(() => {
@@ -493,10 +812,32 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
   })
 
   createEffect(() => {
-    if (styles()) {
-      widget()?.setStyles(styles())
-      setWidgetDefaultStyles(lodashClone(widget()!.getStyles()))
+    const chart = widget()
+    if (!chart) {
+      return
     }
+    const override = styleOverrides()
+    if (override) {
+      updateAxisSettingsFromStyle(override)
+      const sanitized = stripAxisKeys(override)
+      if (sanitized && Object.keys(sanitized).length > 0) {
+        chart.setStyles(sanitized)
+      }
+    }
+    setWidgetDefaultStyles(lodashClone(chart.getStyles()))
+  })
+
+  createEffect(() => {
+    theme()
+    const chart = widget()
+    if (!chart) {
+      return
+    }
+    applyAxisSettingsToChart(chart, axisSettings())
+  })
+
+  createEffect(() => {
+    refreshPriceUnit()
   })
 
   return (
@@ -556,19 +897,39 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
       <Show when={settingModalVisible()}>
         <SettingModal
           locale={locale()}
-          currentStyles={utils.clone(widget()!.getStyles())}
+          currentStyles={(() => {
+            const styles = utils.clone(widget()!.getStyles()) as any
+            const axis = axisSettings()
+            if (!styles.yAxis) {
+              styles.yAxis = {}
+            }
+            styles.yAxis.type = axis.type
+            styles.yAxis.reverse = axis.reverse
+            return styles as Styles
+          })()}
           onClose={() => { setSettingModalVisible(false) }}
           onChange={style => {
-            widget()?.setStyles(style)
+            setStyleOverrides(() => style)
           }}
           onLocaleChange={setLocale}
           onRestoreDefault={(options: SelectDataSourceItem[]) => {
-            const style = {}
+            const style: DeepPartial<Styles> = {}
+            const defaults = widgetDefaultStyles()
+            if (!defaults) {
+              lodashSet(style, 'yAxis.type', defaultAxisSettings.type)
+              lodashSet(style, 'yAxis.reverse', defaultAxisSettings.reverse)
+              applyAxisOverride(defaultAxisSettings)
+              setStyleOverrides(() => style)
+              return
+            }
             options.forEach(option => {
               const key = option.key
-              lodashSet(style, key, utils.formatValue(widgetDefaultStyles(), key))
+              lodashSet(style, key, utils.formatValue(defaults, key))
             })
-            widget()?.setStyles(style)
+            lodashSet(style, 'yAxis.type', defaultAxisSettings.type)
+            lodashSet(style, 'yAxis.reverse', defaultAxisSettings.reverse)
+            applyAxisOverride(defaultAxisSettings)
+            setStyleOverrides(() => style)
           }}
         />
       </Show>
@@ -644,11 +1005,10 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
                     ...withGroup,
                     onDrawing: ({ overlay: brushOverlay }) => {
                       // Only add points after the first click (currentStep > 1)
-                      // @ts-expect-error - accessing internal properties
-                      if (brushOverlay.currentStep > 1) {
+                      const internalOverlay = brushOverlay as any
+                      if (internalOverlay.currentStep > 1) {
                         // Advance to next step on each mouse move to add points continuously
-                        // @ts-expect-error - accessing internal method
-                        brushOverlay.nextStep?.()
+                        internalOverlay.nextStep?.()
                       }
                     }
                   })
