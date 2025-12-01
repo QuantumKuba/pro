@@ -137,7 +137,28 @@ export default class BinanceDatafeed implements Datafeed {
     to: number
   ): Promise<KLineData[]> {
     const strategy = getStrategy(period)
-    const url = `${BINANCE_API}/klines?symbol=${symbol.ticker}&interval=${strategy.interval}&startTime=${from}&endTime=${to}&limit=1000`
+
+    let unitMs = 60 * 1000
+    if (strategy.baseType === 'second') unitMs = 1000
+    if (strategy.baseType === 'hour') unitMs = 60 * 60 * 1000
+    if (strategy.baseType === 'day') unitMs = 24 * 60 * 60 * 1000
+    if (strategy.baseType === 'week') unitMs = 7 * 24 * 60 * 60 * 1000
+    if (strategy.baseType === 'month') unitMs = 30 * 24 * 60 * 60 * 1000
+
+    const baseDuration = strategy.baseSpan * unitMs
+    
+    // Calculate aggregation duration to ensure we fetch the start of the current bucket
+    // This is crucial for the WebSocket subscription to continue correctly without gaps or jumps
+    const aggDuration = strategy.multiplier * baseDuration
+    const currentBucketStart = Math.floor(to / aggDuration) * aggDuration
+    const msInCurrentBucket = to - currentBucketStart
+    // Add buffer to ensure we cover the start
+    const candlesInCurrentBucket = Math.ceil(msInCurrentBucket / baseDuration) + 2
+
+    const neededCandles = Math.ceil((to - from) / baseDuration)
+    const limit = Math.min(1000, Math.max(1, neededCandles, candlesInCurrentBucket))
+
+    const url = `${BINANCE_API}/klines?symbol=${symbol.ticker}&interval=${strategy.interval}&endTime=${to}&limit=${limit}`
     
     try {
       const response = await fetch(url)
@@ -166,14 +187,6 @@ export default class BinanceDatafeed implements Datafeed {
       const result: KLineData[] = []
       let currentAgg: KLineData | null = null
       let currentBaseCandles: KLineData[] = []
-
-      // Calculate duration of the aggregated period in ms
-      let unitMs = 60 * 1000
-      if (strategy.baseType === 'second') unitMs = 1000
-      if (strategy.baseType === 'hour') unitMs = 60 * 60 * 1000
-      if (strategy.baseType === 'day') unitMs = 24 * 60 * 60 * 1000
-      if (strategy.baseType === 'week') unitMs = 7 * 24 * 60 * 60 * 1000
-      if (strategy.baseType === 'month') unitMs = 30 * 24 * 60 * 60 * 1000 // Approx
 
       const aggDuration = strategy.multiplier * strategy.baseSpan * unitMs
 
