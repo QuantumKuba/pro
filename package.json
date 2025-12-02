@@ -29,6 +29,7 @@
   "private": false,
   "scripts": {
     "dev": "vite --config dev/vite.config.ts --host",
+    "build:demo": "vite build --config dev/vite.config.ts",
     "build-core": "tsc && vite build",
     "build-dts": "dts-bundle-generator --no-banner true --umd-module-name klinechartspro -o dist/index.d.ts src/index.ts",
     "build": "npm run build-core && npm run build-dts",
