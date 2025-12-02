@@ -418,7 +418,7 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
 
   const [indicatorModalVisible, setIndicatorModalVisible] = createSignal(false)
   const [mainIndicators, setMainIndicators] = createSignal([...(props.mainIndicators!)])
-  const [subIndicators, setSubIndicators] = createSignal({})
+  const [subIndicators, setSubIndicators] = createSignal<Record<string, string>>({})
 
   const [timezoneModalVisible, setTimezoneModalVisible] = createSignal(false)
   const [timezone, setTimezone] = createSignal<SelectDataSourceItem>({ key: props.timezone, text: translateTimezone(props.timezone, props.locale) })
@@ -596,9 +596,8 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
                 newMainIndicators.splice(newMainIndicators.indexOf(_data.indicator.name), 1)
                 setMainIndicators(newMainIndicators)
               } else {
-                const newIndicators = { ...subIndicators() }
+                const newIndicators: Record<string, string> = { ...subIndicators() }
                 widget()?.removeIndicator({ paneId: _data.paneId, name: _data.indicator.name, id: _data.indicator.id })
-                // @ts-expect-error
                 delete newIndicators[_data.indicator.name]
                 setSubIndicators(newIndicators)
               }
@@ -627,11 +626,10 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
         if (w)
           createIndicator(w, indicator, true, { id: 'candle_pane' })
       })
-      const subIndicatorMap = {}
+      const subIndicatorMap: Record<string, string> = {}
       props.subIndicators!.forEach(indicator => {
         const paneId = createIndicator(w, indicator, true)
         if (paneId) {
-          // @ts-expect-error
           subIndicatorMap[indicator] = paneId
         }
       })
@@ -869,17 +867,15 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
           }}
           onSubIndicatorChange={data => {
             console.info('onSubIndicatorChange', data)
-            const newSubIndicators = { ...subIndicators() }
+            const newSubIndicators: Record<string, string> = { ...subIndicators() }
             if (data.added) {
               const id = createIndicator(widget()!, data.name)
               if (id) {
-                // @ts-expect-error
                 newSubIndicators[data.name] = id
               }
             } else {
               if (data.id) {
                 widget()?.removeIndicator({name: data.name, id: data.id})
-                // @ts-expect-error
                 delete newSubIndicators[data.name]
               }
             }
