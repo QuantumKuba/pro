@@ -9,6 +9,8 @@
   box-sizing: border-box;
   border-bottom: solid 1px var(--klinecharts-pro-border-color);
   background-color: var(--klinecharts-pro-background-color);
+  position: relative;
+  z-index: 10;
   
   .menu-container {
     display: flex;
@@ -18,68 +20,130 @@
     align-items: center;
     width: @drawing-bar-width;
     box-sizing: border-box;
-    // Removed border-right
+    
     svg {
-      fill: var(--klinecharts-pro-text-color);
-      width: 24px;
-      height: 24px;
+      fill: var(--klinecharts-pro-text-second-color);
+      width: 22px;
+      height: 22px;
       cursor: pointer;
-      transition: all .2s;
+      transition: 
+        fill @motion-fast @motion-ease,
+        transform @motion-medium @motion-spring;
+      border-radius: 6px;
+      padding: 4px;
+      
+      &:hover {
+        fill: var(--klinecharts-pro-text-color);
+        background-color: var(--klinecharts-pro-hover-background-color);
+      }
+      
+      &:active {
+        transform: scale(0.92);
+      }
+      
       &.rotate {
         transform: rotate(180deg);
         transform-origin: center;
       }
     }
   }
+  
   .symbol {
     display: flex;
     flex-direction: row;
     align-items: center;
     height: 32px;
-    font-size: 16px;
-    padding: 0 12px;
+    font-size: 15px;
+    padding: 0 14px;
     font-weight: 600;
+    letter-spacing: -0.02em;
     box-sizing: border-box;
-    // Removed border-right
     cursor: pointer;
-    border-radius: var(--klinecharts-pro-border-radius);
+    border-radius: 8px;
     margin-left: 4px;
+    transition: 
+      background-color @motion-fast @motion-ease,
+      transform @motion-fast @motion-ease;
+    
     &:hover {
       background-color: var(--klinecharts-pro-hover-background-color);
+      transform: translateY(-1px);
     }
+    
+    &:active {
+      transform: scale(0.98);
+    }
+    
     img {
       width: 20px;
       height: 20px;
       margin-right: 8px;
+      border-radius: 4px;
     }
   }
+  
   .item {
-    transition: all 0.2s;
+    transition: 
+      transform @motion-fast @motion-spring,
+      background-color @motion-fast @motion-ease,
+      color @motion-fast @motion-ease,
+      box-shadow @motion-fast @motion-ease;
     box-sizing: border-box;
     cursor: pointer;
-    fill: var(--klinecharts-pro-text-color);
+    fill: var(--klinecharts-pro-text-second-color);
+    position: relative;
+    overflow: hidden;
+    
     &.selected {
-      background-color: var(--klinecharts-pro-selected-color)!important;
+      background: linear-gradient(135deg, 
+        rgba(0,113,227,0.1) 0%, 
+        rgba(0,113,227,0.06) 100%);
       color: var(--klinecharts-pro-primary-color);
-      font-weight: 500;
+      font-weight: 600;
+      box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.1);
+      
+      // Subtle shimmer effect
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, 
+          transparent 0%, 
+          rgba(255,255,255,0.04) 50%, 
+          transparent 100%);
+        background-size: 200% 100%;
+        animation: kc-shimmer 2s linear infinite;
+        pointer-events: none;
+      }
     }
   }
+  
   .period {
-    padding: 4px 10px;
+    padding: 5px 12px;
     margin: 0 2px;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 13px;
     font-weight: 500;
+    
     &:hover {
       background-color: var(--klinecharts-pro-hover-background-color);
+      transform: translateY(-1px);
     }
+    
+    &:active {
+      transform: scale(0.96);
+    }
+    
     &:first-child {
       margin-left: 12px;
     }
   }
+  
   .symbol + .period, .menu-container + .period {
     margin-left: 12px;
   }
+  
   .tools {
     display: flex;
     flex-direction: row;
@@ -87,23 +151,35 @@
     justify-content: center;
     height: 32px;
     padding: 0 12px;
-    border-radius: 6px;
-    // Removed border-right
+    border-radius: 8px;
     margin: 0 2px;
-    transition: all 0.2s;
+    font-size: 13px;
+    font-weight: 450;
+    color: var(--klinecharts-pro-text-second-color);
+    transition: 
+      background-color @motion-fast @motion-ease,
+      color @motion-fast @motion-ease,
+      transform @motion-fast @motion-ease;
+    
     &:hover {
       background-color: var(--klinecharts-pro-hover-background-color);
-      fill: var(--klinecharts-pro-primary-color);
-      color: var(--klinecharts-pro-primary-color);
+      fill: var(--klinecharts-pro-text-color);
+      color: var(--klinecharts-pro-text-color);
     }
+    
+    &:active {
+      transform: scale(0.97);
+    }
+    
     svg {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       margin-right: 6px;
+      opacity: 0.8;
     }
   }
+  
   .period + .tools {
-    // Removed border-left
     margin-left: 12px;
   }
 }

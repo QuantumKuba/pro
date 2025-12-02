@@ -9,35 +9,51 @@
   border: solid 1px var(--klinecharts-pro-border-color);
   border-radius: 8px;
   padding: 0 12px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--klinecharts-pro-text-color);
   box-sizing: border-box;
   cursor: text;
-  transition: all 0.2s;
+  transition: 
+    border-color @motion-fast @motion-ease,
+    box-shadow @motion-fast @motion-ease;
   background-color: var(--klinecharts-pro-background-color);
+  
+  &:hover {
+    border-color: rgba(0, 113, 227, 0.3);
+  }
   
   &[data-status="focus"] {
     border-color: var(--klinecharts-pro-primary-color);
-    box-shadow: 0 0 0 3px fade(@c-primary, 20%);
+    box-shadow: 0 0 0 3px fade(@c-primary, 12%);
   }
+  
   .prefix {
     display: flex;
     white-space: nowrap;
     padding-right: 10px;
+    color: var(--klinecharts-pro-text-second-color);
   }
+  
   .suffix {
     display: flex;
     white-space: nowrap;
     padding-left: 10px;
+    color: var(--klinecharts-pro-text-second-color);
   }
+  
   .value {
     width: 100%;
     border: none;
     outline: none;
-    border: none;
     background: transparent;
     color: var(--klinecharts-pro-text-color);
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 400;
     cursor: text;
+    
+    &::placeholder {
+      color: var(--klinecharts-pro-text-second-color);
+      opacity: 0.6;
+    }
   }
 }

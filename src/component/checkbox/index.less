@@ -5,21 +5,44 @@
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 450;
   color: var(--klinecharts-pro-text-color);
   fill: var(--klinecharts-pro-text-color);
   cursor: pointer;
+  transition: color @motion-fast @motion-ease;
+  
   .icon {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
+    transition: 
+      fill @motion-fast @motion-ease,
+      transform @motion-fast @motion-spring;
   }
 
   .label {
     display: inline-block;
-    margin-left: 6px;
+    margin-left: 8px;
   }
+  
+  &:hover {
+    .icon {
+      transform: scale(1.05);
+    }
+  }
+  
+  &:active {
+    .icon {
+      transform: scale(0.95);
+    }
+  }
+  
   &.checked {
     color: var(--klinecharts-pro-primary-color);
     fill: var(--klinecharts-pro-primary-color);
+    
+    .icon {
+      animation: kc-icon-bounce @motion-medium @motion-spring;
+    }
   }
 }

@@ -1,6 +1,6 @@
 @import (reference) '../../base.less';
 
-@gap: 8px;
+@gap: 6px;
 
 .@{prefix-cls}-drawing-bar {
   width: @drawing-bar-width;
@@ -8,7 +8,10 @@
   box-sizing: border-box;
   border-right: solid 1px var(--klinecharts-pro-border-color);
   background-color: var(--klinecharts-pro-background-color);
-  padding-top: 8px;
+  padding-top: 6px;
+  position: relative;
+  z-index: 20;
+  
   .item {
     display: flex;
     flex-direction: row;
@@ -16,56 +19,92 @@
     justify-content: center;
     position: relative;
     width: 100%;
-    margin-top: @gap;
+    height: 42px;
     cursor: pointer;
     color: var(--klinecharts-pro-text-second-color);
     fill: var(--klinecharts-pro-text-second-color);
     stroke: var(--klinecharts-pro-text-second-color);
+    
+    // Ripple container
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: var(--klinecharts-pro-primary-color);
+      opacity: 0;
+      pointer-events: none;
+      animation: kc-ripple 500ms ease-out forwards;
+    }
+    
     .icon-overlay {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       width: 36px;
       height: 36px;
       border-radius: 8px;
-      transition: all 0.2s;
-      padding: 6px;
+      transition: 
+        transform @motion-medium @motion-spring,
+        background-color @motion-fast @motion-ease,
+        box-shadow @motion-fast @motion-ease;
       box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
+      
+      svg {
+        width: 24px;
+        height: 24px;
+      }
+      
       &:hover {
         background-color: var(--klinecharts-pro-hover-background-color);
         color: var(--klinecharts-pro-text-color);
         fill: var(--klinecharts-pro-text-color);
         stroke: var(--klinecharts-pro-text-color);
       }
+      
+      &:active {
+        transform: scale(0.94);
+        transition-duration: 80ms;
+      }
+      
       &.selected {
-        background-color: var(--klinecharts-pro-selected-color)!important;
+        background-color: var(--klinecharts-pro-selected-color);
         fill: var(--klinecharts-pro-primary-color);
         stroke: var(--klinecharts-pro-primary-color);
         color: var(--klinecharts-pro-primary-color);
       }
     }
+    
     .icon-arrow {
       display: flex;
       flex-direction: row;
       align-items: center;
       justify-content: center;
       position: absolute;
-      top: 0;
-      right: 0;
-      height: 32px;
-      width: 10px;
+      top: 50%;
+      right: 4px;
+      transform: translateY(-50%);
+      height: 24px;
+      width: 12px;
       opacity: 0;
-      transition: all .2s;
-      border-top-left-radius: 2px;
-      border-bottom-left-radius: 2px;
+      transition: opacity @motion-fast @motion-ease;
+      border-radius: 4px;
       z-index: 10;
+      
       svg {
         width: 4px;
         height: 6px;
-        transition: all .2s;
+        transition: transform @motion-fast @motion-spring;
+        opacity: 0.6;
+        
         &.rotate {
           transform: rotate(180deg);
         }
       }
+      
       &:hover {
         background-color: var(--klinecharts-pro-hover-background-color);
+        svg { opacity: 1; }
       }
     }
 
@@ -73,34 +112,64 @@
       position: absolute;
       top: 0;
       white-space: nowrap;
-      left: calc(100% + 6px);
-      background-color: var(--klinecharts-pro-popover-background-color);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      z-index: 99;
-      box-shadow: var(--klinecharts-pro-shadow);
+      left: calc(100% + 4px);
+      background: var(--klinecharts-pro-popover-background-color);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      z-index: 9999;
+      box-shadow: 
+        0 4px 16px rgba(0,0,0,0.1),
+        0 12px 40px rgba(0,0,0,0.15);
+      border: 1px solid var(--klinecharts-pro-border-color);
+      animation: kc-slide-in @motion-medium @motion-spring both;
       border-radius: 12px;
       padding: 6px;
       min-height: auto;
-      max-height: 320px;
+      max-height: 360px;
+      overflow-y: auto;
+      pointer-events: auto;
+      
       li {
-        padding-left: 12px;
-        padding-right: 12px;
-        height: 40px;
+        padding: 0 12px;
+        height: 36px;
         display: flex;
         align-items: center;
         border-radius: 6px;
         margin-bottom: 2px;
+        font-size: 13px;
+        font-weight: 450;
+        color: var(--klinecharts-pro-text-color);
+        cursor: pointer;
+        transition: 
+          background-color @motion-fast @motion-ease;
+        
         &:hover {
-           background-color: var(--klinecharts-pro-hover-background-color);
+          background: var(--klinecharts-pro-hover-background-color);
         }
+        
+        &:active {
+          background: var(--klinecharts-pro-selected-color);
+        }
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+        
         .icon-overlay {
           width: 24px;
           height: 24px;
-          padding: 0;
-          margin-right: 8px;
+          margin-right: 10px;
+          flex-shrink: 0;
+          
+          svg {
+            width: 24px;
+            height: 24px;
+          }
+          
           &:hover {
             background-color: transparent;
+            transform: none;
+            box-shadow: none;
           }
         }
       }
@@ -115,9 +184,10 @@
 
   .split-line {
     display: block;
-    width: 100%;
+    width: calc(100% - 16px);
     height: 1px;
     background-color: var(--klinecharts-pro-border-color);
-    margin-top: @gap;
+    margin: @gap auto;
+    opacity: 0.5;
   }
 }

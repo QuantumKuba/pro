@@ -6,21 +6,97 @@
 @widget-height: calc(100% - @period-bar-height);
 
 @c-primary: #0071E3;
+@c-primary-soft: rgba(0, 113, 227, 0.85);
 
-@c-hover-background-light: rgba(0, 0, 0, 0.05);
-@c-popover-background-light: rgba(255, 255, 255, 0.8);
-@c-background-light: #ffffff;
+// Softer, more refined light palette (Apple-style)
+@c-hover-background-light: rgba(0, 0, 0, 0.035);
+@c-popover-background-light: rgba(255, 255, 255, 0.72);
+@c-background-light: #fafafa;
 @c-text-light: #1d1d1f;
-@c-text-second-light: #86868b;
-@c-border-light: #d2d2d7;
+@c-text-second-light: #6e6e73;
+@c-border-light: rgba(0, 0, 0, 0.08);
+@c-surface-glass-light: rgba(255, 255, 255, 0.6);
 
-@c-hover-background-dark: rgba(255, 255, 255, 0.1);
-@c-background-dark: #000000;
-@c-popover-background-dark: rgba(28, 28, 30, 0.8);
+// Softer, refined dark palette
+@c-hover-background-dark: rgba(255, 255, 255, 0.06);
+@c-background-dark: #0d0d0d;
+@c-popover-background-dark: rgba(38, 38, 40, 0.72);
 @c-text-dark: #f5f5f7;
-@c-text-second-dark: #86868b;
-@c-border-dark: #424245;
+@c-text-second-dark: #98989d;
+@c-border-dark: rgba(255, 255, 255, 0.1);
+@c-surface-glass-dark: rgba(50, 50, 52, 0.5);
 
-@border-radius: 8px;
-@shadow-light: 0 4px 12px rgba(0, 0, 0, 0.1);
-@shadow-dark: 0 4px 12px rgba(0, 0, 0, 0.3);
+@border-radius: 10px;
+@shadow-light: 0 2px 8px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
+@shadow-dark: 0 2px 8px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.35);
+
+// Motion tokens
+@motion-fast: 150ms;
+@motion-medium: 280ms;
+@motion-slow: 450ms;
+@motion-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+@motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+// Keyframes for subtle life
+@keyframes kc-float {
+	0% { transform: translateY(0px); }
+	50% { transform: translateY(-4px); }
+	100% { transform: translateY(0px); }
+}
+
+@keyframes kc-shimmer {
+	0% { background-position: -150% 0; }
+	100% { background-position: 150% 0; }
+}
+
+@keyframes kc-pop {
+	0% { transform: scale(0.96); opacity: 0.5 }
+	50% { transform: scale(1.02); opacity: 1 }
+	100% { transform: scale(1); opacity: 1 }
+}
+
+// Icon selection animation
+@keyframes kc-icon-select {
+	0% { transform: scale(1) rotate(0deg); }
+	30% { transform: scale(0.88) rotate(-8deg); }
+	60% { transform: scale(1.08) rotate(4deg); }
+	100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes kc-icon-bounce {
+	0% { transform: scale(1); }
+	40% { transform: scale(0.92); }
+	70% { transform: scale(1.06); }
+	100% { transform: scale(1); }
+}
+
+// Ripple effect
+@keyframes kc-ripple {
+	0% {
+		transform: translate(-50%, -50%) scale(0);
+		opacity: 0.5;
+	}
+	100% {
+		transform: translate(-50%, -50%) scale(4);
+		opacity: 0;
+	}
+}
+
+// Gentle pulse for active states
+@keyframes kc-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.7; }
+}
+
+// Slide in for popovers
+@keyframes kc-slide-in {
+	0% { transform: translateX(-8px) scale(0.96); opacity: 0; }
+	100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+// Glass gradient mixin
+.glass-surface() {
+	backdrop-filter: blur(20px) saturate(180%);
+	-webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+

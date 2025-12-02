@@ -35,6 +35,19 @@ export interface DrawingBarProps {
 
 const GROUP_ID = 'drawing_tools'
 
+// Ripple effect helper
+const createRipple = (event: MouseEvent, element: HTMLElement) => {
+  const rect = element.getBoundingClientRect()
+  const ripple = document.createElement('span')
+  ripple.className = 'ripple'
+  const size = Math.max(rect.width, rect.height)
+  ripple.style.width = ripple.style.height = `${size}px`
+  ripple.style.left = `${event.clientX - rect.left - size / 2}px`
+  ripple.style.top = `${event.clientY - rect.top - size / 2}px`
+  element.appendChild(ripple)
+  setTimeout(() => ripple.remove(), 500)
+}
+
 const DrawingBar: Component<DrawingBarProps> = props => {
   const [singleLineIcon, setSingleLineIcon] = createSignal('horizontalStraightLine')
   const [moreLineIcon, setMoreLineIcon] = createSignal('priceChannelLine')
@@ -51,6 +64,8 @@ const DrawingBar: Component<DrawingBarProps> = props => {
   const [visible, setVisible] = createSignal(true)
 
   const [popoverKey, setPopoverKey] = createSignal('')
+  
+  const [selectedIcon, setSelectedIcon] = createSignal('')
 
   const overlays = createMemo(() => {
     return [
@@ -75,8 +90,12 @@ const DrawingBar: Component<DrawingBarProps> = props => {
             tabIndex={0}
             onBlur={() => { setPopoverKey('') }}>
             <span
-              style="width:32px;height:32px"
-              onClick={() => { props.onDrawingItemClick({ groupId: GROUP_ID, name: item.icon, visible: visible(), lock: lock(), mode: mode() as OverlayMode }) }}>
+              class={`icon-overlay ${selectedIcon() === item.icon ? 'selected' : ''}`}
+              onClick={(e) => { 
+                createRipple(e, e.currentTarget as HTMLElement)
+                setSelectedIcon(item.icon)
+                props.onDrawingItemClick({ groupId: GROUP_ID, name: item.icon, visible: visible(), lock: lock(), mode: mode() as OverlayMode }) 
+              }}>
               <Icon name={item.icon} />
             </span>
             <div
@@ -102,11 +121,14 @@ const DrawingBar: Component<DrawingBarProps> = props => {
                       <li
                         onClick={() => {
                           item.setter(data.key)
+                          setSelectedIcon(data.key)
                           props.onDrawingItemClick({ name: data.key, lock: lock(), mode: mode() as OverlayMode })
                           setPopoverKey('')
                         }}>
-                        <Icon name={data.key}/>
-                        <span style="padding-left:8px">{data.text}</span>
+                        <span class="icon-overlay">
+                          <Icon name={data.key}/>
+                        </span>
+                        <span>{data.text}</span>
                       </li>
                     ))
                   }
@@ -118,8 +140,12 @@ const DrawingBar: Component<DrawingBarProps> = props => {
       }
       <div class="item">
         <span
-          style="width:32px;height:32px"
-          onClick={() => { props.onDrawingItemClick({ groupId: GROUP_ID, name: 'measure', visible: visible(), lock: lock(), mode: mode() as OverlayMode }) }}>
+          class={`icon-overlay ${selectedIcon() === 'measure' ? 'selected' : ''}`}
+          onClick={(e) => { 
+            createRipple(e, e.currentTarget as HTMLElement)
+            setSelectedIcon('measure')
+            props.onDrawingItemClick({ groupId: GROUP_ID, name: 'measure', visible: visible(), lock: lock(), mode: mode() as OverlayMode }) 
+          }}>
           <Icon name="measure" />
         </span>
       </div>
@@ -129,8 +155,9 @@ const DrawingBar: Component<DrawingBarProps> = props => {
         tabIndex={0}
         onBlur={() => { setPopoverKey('') }}>
         <span
-          style="width:32px;height:32px"
-          onClick={() => {
+          class={`icon-overlay ${mode() !== 'normal' ? 'selected' : ''}`}
+          onClick={(e) => {
+            createRipple(e, e.currentTarget as HTMLElement)
             let currentMode = modeIcon()
             if (mode() !== 'normal') {
               currentMode = 'normal'
@@ -140,8 +167,8 @@ const DrawingBar: Component<DrawingBarProps> = props => {
           }}>
           {
             modeIcon() === 'weak_magnet'
-              ? (mode() === 'weak_magnet' ? <Icon name="weak_magnet" class="selected"/> : <Icon name="weak_magnet"/>) 
-              : (mode() === 'strong_magnet' ? <Icon name="strong_magnet" class="selected"/> : <Icon name="strong_magnet"/>)
+              ? <Icon name="weak_magnet"/>
+              : <Icon name="strong_magnet"/>
           }
         </span>
         <div
@@ -171,8 +198,10 @@ const DrawingBar: Component<DrawingBarProps> = props => {
                       props.onModeChange(data.key)
                       setPopoverKey('')
                     }}>
-                    <Icon name={data.key}/>
-                    <span style="padding-left:8px">{data.text}</span>
+                    <span class="icon-overlay">
+                      <Icon name={data.key}/>
+                    </span>
+                    <span>{data.text}</span>
                   </li>
                 ))
               }
@@ -183,8 +212,9 @@ const DrawingBar: Component<DrawingBarProps> = props => {
       <div
         class="item">
         <span
-          style="width:32px;height:32px"
-          onClick={() => {
+          class={`icon-overlay ${lock() ? 'selected' : ''}`}
+          onClick={(e) => {
+            createRipple(e, e.currentTarget as HTMLElement)
             const currentLock = !lock()
             setLock(currentLock)
             props.onLockChange(currentLock)
@@ -197,8 +227,9 @@ const DrawingBar: Component<DrawingBarProps> = props => {
       <div
         class="item">
         <span
-          style="width:32px;height:32px"
-          onClick={() => {
+          class={`icon-overlay ${!visible() ? 'selected' : ''}`}
+          onClick={(e) => {
+            createRipple(e, e.currentTarget as HTMLElement)
             const v = !visible()
             setVisible(v)
             props.onVisibleChange(v)
@@ -212,8 +243,11 @@ const DrawingBar: Component<DrawingBarProps> = props => {
       <div
         class="item">
         <span
-          style="width:32px;height:32px"
-          onClick={() => { props.onRemoveClick(GROUP_ID) }}>
+          class="icon-overlay"
+          onClick={(e) => { 
+            createRipple(e, e.currentTarget as HTMLElement)
+            props.onRemoveClick(GROUP_ID) 
+          }}>
           <Icon name="remove" />
         </span>
       </div>

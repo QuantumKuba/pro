@@ -1,25 +1,48 @@
 @import (reference) '../../base.less';
 
 .@{prefix-cls}-indicator-modal-list {
-  margin-left: -24px;
-  margin-right: -24px;
-  height: 440px;
+  margin-left: -20px;
+  margin-right: -20px;
+  height: 400px;
   position: relative;
+  
   .title {
     position: sticky;
     top: 0;
-    background-color: var(--klinecharts-pro-popover-background-color);
-    font-size: 16px;
-    color: var(--klinecharts-pro-text-color);
-    font-weight: 400;
+    background: var(--klinecharts-pro-popover-background-color);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    font-size: 14px;
+    color: var(--klinecharts-pro-text-second-color);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    padding: 12px 16px 8px;
+    z-index: 1;
+    
     &:hover {
-      background-color: var(--klinecharts-pro-popover-background-color);
+      background: var(--klinecharts-pro-popover-background-color);
     }
   }
-  .row:hover {
-    .checkbox {
-      fill: var(--klinecharts-pro-primary-color);
-      color: var(--klinecharts-pro-primary-color);
+  
+  .row {
+    transition: 
+      background-color @motion-fast @motion-ease,
+      transform @motion-fast @motion-ease;
+    border-radius: 8px;
+    margin: 0 6px 2px;
+    
+    &:hover {
+      transform: translateX(2px);
+      
+      .checkbox {
+        fill: var(--klinecharts-pro-primary-color);
+        color: var(--klinecharts-pro-primary-color);
+      }
+    }
+    
+    &:active {
+      transform: scale(0.99);
     }
   }
 }

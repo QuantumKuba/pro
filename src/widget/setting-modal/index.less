@@ -3,8 +3,17 @@
 .@{prefix-cls}-setting-modal-content {
   display: grid;
   grid-template-columns: auto auto auto auto;
-  grid-row-gap: 20px;
-  margin-top: 20px;
-  margin-bottom: 30px;
+  grid-row-gap: 16px;
+  grid-column-gap: 12px;
+  margin-top: 16px;
+  margin-bottom: 24px;
   align-items: center;
+  
+  // Setting labels
+  > span {
+    font-size: 13px;
+    font-weight: 450;
+    color: var(--klinecharts-pro-text-color);
+    padding-right: 8px;
+  }
 }

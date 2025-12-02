@@ -1,38 +1,73 @@
 @import (reference) '../../base.less';
 
 .@{prefix-cls}-symbol-search-modal-input {
-  margin: 20px 0 10px 0;
-  height: 40px;
-  svg {
-    width: 18px;
-    height: 18px;
-    fill: var(--klinecharts-pro-text-second-color);
+  margin: 16px 0 12px 0;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--klinecharts-pro-hover-background-color);
+  border-color: transparent;
+  
+  &:hover {
+    border-color: rgba(0, 113, 227, 0.2);
   }
+  
+  &[data-status="focus"] {
+    background: var(--klinecharts-pro-background-color);
+    border-color: var(--klinecharts-pro-primary-color);
+  }
+  
+  svg {
+    width: 16px;
+    height: 16px;
+    fill: var(--klinecharts-pro-text-second-color);
+    opacity: 0.7;
+  }
+  
   .value {
-    font-size: 16px;
+    font-size: 14px;
+    font-weight: 450;
   }
 }
 
 .@{prefix-cls}-symbol-search-modal-list {
-  height: 400px;
-  margin-left: -24px;
-  margin-right: -24px;
+  height: 360px;
+  margin-left: -20px;
+  margin-right: -20px;
+  
   li {
     justify-content: space-between;
+    margin: 0 6px 2px;
+    border-radius: 8px;
+    transition: 
+      background-color @motion-fast @motion-ease,
+      transform @motion-fast @motion-ease;
+    
+    &:hover {
+      transform: translateX(2px);
+    }
+    
+    &:active {
+      transform: scale(0.99);
+    }
+    
     div {
       display: flex;
       flex-direction: row;
       align-items: center;
+      
       img {
-        width: 16px;
-        height: 16px;
-        margin-right: 6px;
+        width: 18px;
+        height: 18px;
+        margin-right: 8px;
+        border-radius: 4px;
       }
+      
       span {
-        width: 300px;
+        width: 280px;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
+        font-weight: 450;
       }
     }
   }
