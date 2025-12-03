@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { KLineChartPro, DefaultDatafeed, BinanceDatafeed, CompositeDatafeed } from '../src/index'
-import { inject, pageview } from '@vercel/analytics'
+import { inject } from '@vercel/analytics'
 
 const polygonDatafeed = new DefaultDatafeed(import.meta.env.VITE_POLYGON || '')
 const binanceDatafeed = new BinanceDatafeed()
@@ -11,32 +11,9 @@ const datafeed = new CompositeDatafeed({
 })
 
 function init() {
-  // Initialize Vercel Web Analytics for SPA pageview tracking
-  if (typeof window !== 'undefined') {
-    try {
-      inject({ framework: 'solid' })
-      // Track initial load
-      pageview({ path: location.pathname })
+  // Initialize Vercel Web Analytics
+  inject()
 
-      // Ensure SPA route changes are reported
-      const wrap = (type: 'pushState' | 'replaceState') => {
-        const orig = (history as any)[type]
-        // @ts-ignore
-        history[type] = function (...args: any[]) {
-          const result = orig.apply(this, args)
-          window.dispatchEvent(new Event('locationchange'))
-          return result
-        }
-      }
-      wrap('pushState')
-      wrap('replaceState')
-      window.addEventListener('popstate', () => pageview({ path: location.pathname }))
-      window.addEventListener('locationchange', () => pageview({ path: location.pathname }))
-    } catch (e) {
-      // fail silently if analytics not available
-      console.warn('Vercel analytics initialization failed', e)
-    }
-  }
   const chart = new KLineChartPro({
     container: 'app',
     symbol: {
