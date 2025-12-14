@@ -140,5 +140,11 @@
   "replay_step_back": "上一根K线",
   "replay_speed": "速度",
   "replay_select_date": "开始日期",
-  "candle_fetch_limit": "K线获取数量"
+  "candle_fetch_limit": "K线获取数量",
+  "favorites": "收藏",
+  "all_pairs": "全部交易对",
+  "no_favorites": "暂无收藏",
+  "add_to_favorites": "添加到收藏",
+  "remove_from_favorites": "取消收藏",
+  "loading_symbols": "加载交易对中..."
 }

@@ -10,24 +10,92 @@ import { Datafeed, SymbolInfo, Period, DatafeedSubscribeCallback } from './types
 const BINANCE_API = 'https://api.binance.com/api/v3'
 const BINANCE_WS = 'wss://stream.binance.com:9443/ws'
 
-// Popular trading pairs
-const SYMBOLS: SymbolInfo[] = [
-  { ticker: 'BTCUSDT', name: 'Bitcoin / USDT', shortName: 'BTC', exchange: 'Binance', market: 'crypto', pricePrecision: 2, volumePrecision: 5 },
-  { ticker: 'ETHUSDT', name: 'Ethereum / USDT', shortName: 'ETH', exchange: 'Binance', market: 'crypto', pricePrecision: 2, volumePrecision: 4 },
-  { ticker: 'BNBUSDT', name: 'BNB / USDT', shortName: 'BNB', exchange: 'Binance', market: 'crypto', pricePrecision: 2, volumePrecision: 3 },
-  { ticker: 'SOLUSDT', name: 'Solana / USDT', shortName: 'SOL', exchange: 'Binance', market: 'crypto', pricePrecision: 2, volumePrecision: 3 },
-  { ticker: 'XRPUSDT', name: 'XRP / USDT', shortName: 'XRP', exchange: 'Binance', market: 'crypto', pricePrecision: 4, volumePrecision: 1 },
-  { ticker: 'ADAUSDT', name: 'Cardano / USDT', shortName: 'ADA', exchange: 'Binance', market: 'crypto', pricePrecision: 4, volumePrecision: 1 },
-  { ticker: 'DOGEUSDT', name: 'Dogecoin / USDT', shortName: 'DOGE', exchange: 'Binance', market: 'crypto', pricePrecision: 5, volumePrecision: 0 },
-  { ticker: 'DOTUSDT', name: 'Polkadot / USDT', shortName: 'DOT', exchange: 'Binance', market: 'crypto', pricePrecision: 3, volumePrecision: 2 },
-  { ticker: 'LINKUSDT', name: 'Chainlink / USDT', shortName: 'LINK', exchange: 'Binance', market: 'crypto', pricePrecision: 3, volumePrecision: 2 },
-  { ticker: 'AVAXUSDT', name: 'Avalanche / USDT', shortName: 'AVAX', exchange: 'Binance', market: 'crypto', pricePrecision: 2, volumePrecision: 2 },
-  { ticker: 'MATICUSDT', name: 'Polygon / USDT', shortName: 'MATIC', exchange: 'Binance', market: 'crypto', pricePrecision: 4, volumePrecision: 1 },
-  { ticker: 'ATOMUSDT', name: 'Cosmos / USDT', shortName: 'ATOM', exchange: 'Binance', market: 'crypto', pricePrecision: 3, volumePrecision: 2 },
-  { ticker: 'LTCUSDT', name: 'Litecoin / USDT', shortName: 'LTC', exchange: 'Binance', market: 'crypto', pricePrecision: 2, volumePrecision: 3 },
-  { ticker: 'UNIUSDT', name: 'Uniswap / USDT', shortName: 'UNI', exchange: 'Binance', market: 'crypto', pricePrecision: 3, volumePrecision: 2 },
-  { ticker: 'NEARUSDT', name: 'NEAR Protocol / USDT', shortName: 'NEAR', exchange: 'Binance', market: 'crypto', pricePrecision: 3, volumePrecision: 1 },
-]
+// Cache for symbols fetched from API
+let symbolsCache: SymbolInfo[] | null = null
+let symbolsCacheTime: number = 0
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+// Popular quote assets for tabs
+export const QUOTE_ASSETS = ['USDT', 'BTC', 'ETH', 'BNB', 'FDUSD'] as const
+export type QuoteAsset = typeof QUOTE_ASSETS[number] | 'ALL' | 'OTHER'
+
+// Binance exchangeInfo response type
+interface BinanceExchangeSymbol {
+  symbol: string
+  status: string
+  baseAsset: string
+  quoteAsset: string
+  quotePrecision: number
+  baseAssetPrecision: number
+}
+
+interface BinanceExchangeInfo {
+  symbols: BinanceExchangeSymbol[]
+}
+
+/**
+ * Fetch all trading symbols from Binance API
+ */
+async function fetchAllSymbols(): Promise<SymbolInfo[]> {
+  // Return cached if fresh
+  if (symbolsCache && Date.now() - symbolsCacheTime < CACHE_TTL) {
+    return symbolsCache
+  }
+
+  try {
+    const response = await fetch(`${BINANCE_API}/exchangeInfo`)
+    const data: BinanceExchangeInfo = await response.json()
+
+    if (!data.symbols || !Array.isArray(data.symbols)) {
+      console.error('Invalid exchangeInfo response')
+      return symbolsCache || []
+    }
+
+    // Filter for TRADING status and convert to SymbolInfo
+    const symbols: SymbolInfo[] = data.symbols
+      .filter(s => s.status === 'TRADING')
+      .map(s => ({
+        ticker: s.symbol,
+        name: `${s.baseAsset} / ${s.quoteAsset}`,
+        shortName: s.baseAsset,
+        exchange: 'Binance',
+        market: 'crypto',
+        pricePrecision: s.quotePrecision,
+        volumePrecision: s.baseAssetPrecision,
+        // Store quote asset for filtering (extended property)
+        priceCurrency: s.quoteAsset
+      }))
+      // Sort alphabetically by ticker
+      .sort((a, b) => a.ticker.localeCompare(b.ticker))
+
+    // Update cache
+    symbolsCache = symbols
+    symbolsCacheTime = Date.now()
+
+    console.info(`Loaded ${symbols.length} symbols from Binance`)
+    return symbols
+
+  } catch (error) {
+    console.error('Failed to fetch symbols:', error)
+    // Return cached data if available, otherwise empty
+    return symbolsCache || []
+  }
+}
+
+/**
+ * Filter symbols by quote asset
+ */
+export function filterSymbolsByQuoteAsset(symbols: SymbolInfo[], quoteAsset: QuoteAsset): SymbolInfo[] {
+  if (quoteAsset === 'ALL') {
+    return symbols
+  }
+
+  if (quoteAsset === 'OTHER') {
+    return symbols.filter(s => !QUOTE_ASSETS.includes(s.priceCurrency as any))
+  }
+
+  return symbols.filter(s => s.priceCurrency === quoteAsset)
+}
 
 const SUPPORTED_INTERVALS = {
   second: [1],
@@ -121,9 +189,10 @@ export default class BinanceDatafeed implements Datafeed {
   private _currentBaseCandles: Map<number, KLineData> = new Map()
 
   async searchSymbols(search?: string): Promise<SymbolInfo[]> {
-    if (!search) return SYMBOLS
+    const allSymbols = await fetchAllSymbols()
+    if (!search) return allSymbols
     const searchLower = search.toLowerCase()
-    return SYMBOLS.filter(s =>
+    return allSymbols.filter(s =>
       s.ticker.toLowerCase().includes(searchLower) ||
       s.name?.toLowerCase().includes(searchLower) ||
       s.shortName?.toLowerCase().includes(searchLower)

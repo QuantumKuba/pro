@@ -140,5 +140,11 @@
   "replay_step_back": "Previous Candle",
   "replay_speed": "Speed",
   "replay_select_date": "Start Date",
-  "candle_fetch_limit": "Candle Fetch Limit"
+  "candle_fetch_limit": "Candle Fetch Limit",
+  "favorites": "Favorites",
+  "all_pairs": "All Pairs",
+  "no_favorites": "No favorites yet",
+  "add_to_favorites": "Add to favorites",
+  "remove_from_favorites": "Remove from favorites",
+  "loading_symbols": "Loading symbols..."
 }
