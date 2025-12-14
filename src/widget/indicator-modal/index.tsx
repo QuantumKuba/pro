@@ -47,9 +47,7 @@ const IndicatorModal: Component<IndicatorModalProps> = props => {
         class="klinecharts-pro-indicator-modal-list">
         <li class="title">{i18n('main_indicator', props.locale)}</li>
         {
-          [
-            'MA', 'EMA', 'SMA', 'BOLL', 'SAR', 'BBI'
-          ].map(name => {
+          ['MA', 'EMA', 'SMA', 'BOLL', 'SAR', 'BBI', 'ICHIMOKU'].map(name => {
             const checked = props.mainIndicators.includes(name)
             return (
               <li
@@ -57,7 +55,7 @@ const IndicatorModal: Component<IndicatorModalProps> = props => {
                 onClick={_ => {
                   props.onMainIndicatorChange({ name, id: 'candle_pane', added: !checked })
                 }}>
-                <Checkbox checked={checked} label={i18n(name.toLowerCase(), props.locale)}/>
+                <Checkbox checked={checked} label={i18n(name.toLowerCase(), props.locale)} />
               </li>
             )
           })
@@ -79,7 +77,7 @@ const IndicatorModal: Component<IndicatorModalProps> = props => {
                   // @ts-expect-error
                   props.onSubIndicatorChange({ name, id: props.subIndicators[name] ?? '', added: !checked });
                 }}>
-                <Checkbox checked={checked} label={i18n(name.toLowerCase(), props.locale)}/>
+                <Checkbox checked={checked} label={i18n(name.toLowerCase(), props.locale)} />
               </li>
             )
           })

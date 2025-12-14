@@ -137,5 +137,11 @@ export default {
     { paramNameKey: 'WR3', precision: 0, min: 1, styleKey: 'lines[2].color' },
     { paramNameKey: 'WR4', precision: 0, min: 1, styleKey: 'lines[3].color' },
     { paramNameKey: 'WR5', precision: 0, min: 1, styleKey: 'lines[4].color' },
+  ],
+  ICHIMOKU: [
+    { paramNameKey: 'conversion_period', precision: 0, min: 1, default: 9 },
+    { paramNameKey: 'base_period', precision: 0, min: 1, default: 26 },
+    { paramNameKey: 'lagging_span_period', precision: 0, min: 1, default: 52 },
+    { paramNameKey: 'displacement', precision: 0, min: 1, default: 26 }
   ]
 }

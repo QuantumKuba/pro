@@ -12,9 +12,10 @@
  * limitations under the License.
  */
 
-import { registerOverlay } from 'klinecharts'
+import { registerOverlay, registerIndicator } from 'klinecharts'
 
 import overlays from './extension'
+import indicators from './indicator'
 
 import DefaultDatafeed from './DefaultDatafeed'
 import BinanceDatafeed from './BinanceDatafeed'
@@ -28,6 +29,7 @@ import { Datafeed, SymbolInfo, Period, DatafeedSubscribeCallback, ChartProOption
 import './index.less'
 
 overlays.forEach(o => { registerOverlay(o) })
+indicators.forEach(i => { registerIndicator(i) })
 
 export {
   DefaultDatafeed,
