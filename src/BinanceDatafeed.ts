@@ -19,7 +19,17 @@ const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 export const QUOTE_ASSETS = ['USDT', 'BTC', 'ETH', 'BNB', 'FDUSD'] as const
 export type QuoteAsset = typeof QUOTE_ASSETS[number] | 'ALL' | 'OTHER'
 
-// Binance exchangeInfo response type
+// Binance exchangeInfo response types
+interface BinanceFilter {
+  filterType: string
+  tickSize?: string
+  stepSize?: string
+  minPrice?: string
+  maxPrice?: string
+  minQty?: string
+  maxQty?: string
+}
+
 interface BinanceExchangeSymbol {
   symbol: string
   status: string
@@ -27,10 +37,25 @@ interface BinanceExchangeSymbol {
   quoteAsset: string
   quotePrecision: number
   baseAssetPrecision: number
+  filters: BinanceFilter[]
 }
 
 interface BinanceExchangeInfo {
   symbols: BinanceExchangeSymbol[]
+}
+
+/**
+ * Calculate precision from a tickSize/stepSize string like "0.01" -> 2, "0.00001" -> 5
+ */
+function getPrecisionFromStep(step: string): number {
+  if (!step || step === '0') return 2 // Default fallback
+  const stepNum = parseFloat(step)
+  if (stepNum >= 1) return 0
+  const decimalPart = step.split('.')[1]
+  if (!decimalPart) return 0
+  // Count significant digits (ignore trailing zeros in display)
+  const match = decimalPart.match(/^0*1/)
+  return match ? match[0].length : decimalPart.length
 }
 
 /**
@@ -54,17 +79,31 @@ async function fetchAllSymbols(): Promise<SymbolInfo[]> {
     // Filter for TRADING status and convert to SymbolInfo
     const symbols: SymbolInfo[] = data.symbols
       .filter(s => s.status === 'TRADING')
-      .map(s => ({
-        ticker: s.symbol,
-        name: `${s.baseAsset} / ${s.quoteAsset}`,
-        shortName: s.baseAsset,
-        exchange: 'Binance',
-        market: 'crypto',
-        pricePrecision: s.quotePrecision,
-        volumePrecision: s.baseAssetPrecision,
-        // Store quote asset for filtering (extended property)
-        priceCurrency: s.quoteAsset
-      }))
+      .map(s => {
+        // Get precision from PRICE_FILTER tickSize
+        const priceFilter = s.filters.find(f => f.filterType === 'PRICE_FILTER')
+        const lotSizeFilter = s.filters.find(f => f.filterType === 'LOT_SIZE')
+
+        const pricePrecision = priceFilter?.tickSize
+          ? getPrecisionFromStep(priceFilter.tickSize)
+          : 2 // Fallback
+
+        const volumePrecision = lotSizeFilter?.stepSize
+          ? getPrecisionFromStep(lotSizeFilter.stepSize)
+          : 2 // Fallback
+
+        return {
+          ticker: s.symbol,
+          name: `${s.baseAsset} / ${s.quoteAsset}`,
+          shortName: s.baseAsset,
+          exchange: 'Binance',
+          market: 'crypto',
+          pricePrecision,
+          volumePrecision,
+          // Store quote asset for filtering
+          priceCurrency: s.quoteAsset
+        }
+      })
       // Sort alphabetically by ticker
       .sort((a, b) => a.ticker.localeCompare(b.ticker))
 
