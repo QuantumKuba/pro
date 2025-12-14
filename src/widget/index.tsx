@@ -13,7 +13,7 @@
  */
 
 import PeriodBar from './period-bar'
-import DrawingBar from './drawing-bar'
+import DrawingBar, { DrawingBarApi } from './drawing-bar'
 import IndicatorModal from './indicator-modal'
 import TimezoneModal from './timezone-modal'
 import SettingModal from './setting-modal'
@@ -29,3 +29,4 @@ export {
   IndicatorSettingModal, PeriodSettingModal, SymbolSearchModal,
   ReplayBar
 }
+export type { DrawingBarApi }

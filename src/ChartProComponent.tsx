@@ -34,6 +34,7 @@ import {
   ScreenshotModal, IndicatorSettingModal, SymbolSearchModal, PeriodSettingModal,
   ReplayBar
 } from './widget'
+import type { DrawingBarApi } from './widget'
 
 import { translateTimezone } from './widget/timezone-modal/data'
 
@@ -433,6 +434,9 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
   const [screenshotUrl, setScreenshotUrl] = createSignal('')
 
   const [drawingBarVisible, setDrawingBarVisible] = createSignal(props.drawingBarVisible)
+
+  // Reference to DrawingBar API for clearing selection when drawing completes
+  let drawingBarApi: DrawingBarApi | null = null
 
   const [symbolSearchModalVisible, setSymbolSearchModalVisible] = createSignal(false)
 
@@ -1373,9 +1377,15 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
         <Show when={drawingBarVisible()}>
           <DrawingBar
             locale={props.locale}
+            ref={(api) => { drawingBarApi = api }}
             onDrawingItemClick={overlay => {
               // Ensure overlays created from the drawing bar belong to the drawing group
               const DEFAULT_GROUP_ID = 'drawing_tools'
+
+              // Callback to clear drawing tool selection when drawing completes
+              const onDrawEnd = () => {
+                drawingBarApi?.clearSelection()
+              }
 
               if (typeof overlay === 'object') {
                 const withGroup = { groupId: (overlay as any).groupId ?? DEFAULT_GROUP_ID, ...(overlay as any) }
@@ -1384,6 +1394,7 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
                 if (withGroup.name === 'brush') {
                   widget()?.createOverlay({
                     ...withGroup,
+                    onDrawEnd,
                     onDrawing: ({ overlay: brushOverlay }) => {
                       // Only add points after the first click (currentStep > 1)
                       const internalOverlay = brushOverlay as any
@@ -1396,11 +1407,11 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
                   return
                 }
 
-                widget()?.createOverlay(withGroup)
+                widget()?.createOverlay({ ...withGroup, onDrawEnd })
                 return
               }
 
-              widget()?.createOverlay(overlay)
+              widget()?.createOverlay({ name: overlay as string, onDrawEnd })
             }}
             onModeChange={mode => { widget()?.overrideOverlay({ mode: mode as OverlayMode }) }}
             onLockChange={lock => { widget()?.overrideOverlay({ lock }) }}

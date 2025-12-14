@@ -11,7 +11,7 @@
   background-color: var(--klinecharts-pro-background-color);
   position: relative;
   z-index: 10;
-  
+
   .menu-container {
     display: flex;
     height: 100%;
@@ -20,34 +20,34 @@
     align-items: center;
     width: @drawing-bar-width;
     box-sizing: border-box;
-    
+
     svg {
       fill: var(--klinecharts-pro-text-second-color);
       width: 22px;
       height: 22px;
       cursor: pointer;
-      transition: 
+      transition:
         fill @motion-fast @motion-ease,
         transform @motion-medium @motion-spring;
       border-radius: 6px;
       padding: 4px;
-      
+
       &:hover {
         fill: var(--klinecharts-pro-text-color);
         background-color: var(--klinecharts-pro-hover-background-color);
       }
-      
+
       &:active {
         transform: scale(0.92);
       }
-      
+
       &.rotate {
         transform: rotate(180deg);
         transform-origin: center;
       }
     }
   }
-  
+
   .symbol {
     display: flex;
     flex-direction: row;
@@ -61,19 +61,19 @@
     cursor: pointer;
     border-radius: 8px;
     margin-left: 4px;
-    transition: 
+    transition:
       background-color @motion-fast @motion-ease,
       transform @motion-fast @motion-ease;
-    
+
     &:hover {
       background-color: var(--klinecharts-pro-hover-background-color);
       transform: translateY(-1px);
     }
-    
+
     &:active {
       transform: scale(0.98);
     }
-    
+
     img {
       width: 20px;
       height: 20px;
@@ -81,9 +81,9 @@
       border-radius: 4px;
     }
   }
-  
+
   .item {
-    transition: 
+    transition:
       transform @motion-fast @motion-spring,
       background-color @motion-fast @motion-ease,
       color @motion-fast @motion-ease,
@@ -93,57 +93,58 @@
     fill: var(--klinecharts-pro-text-second-color);
     position: relative;
     overflow: hidden;
-    
+
     &.selected {
-      background: linear-gradient(135deg, 
-        rgba(0,113,227,0.1) 0%, 
-        rgba(0,113,227,0.06) 100%);
+      background: linear-gradient(135deg,
+          rgba(0, 113, 227, 0.1) 0%,
+          rgba(0, 113, 227, 0.06) 100%);
       color: var(--klinecharts-pro-primary-color);
       font-weight: 600;
-      box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.1);
-      
+      box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+
       // Subtle shimmer effect
       &::after {
         content: '';
         position: absolute;
         inset: 0;
         border-radius: inherit;
-        background: linear-gradient(90deg, 
-          transparent 0%, 
-          rgba(255,255,255,0.04) 50%, 
-          transparent 100%);
+        background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.04) 50%,
+            transparent 100%);
         background-size: 200% 100%;
         animation: kc-shimmer 2s linear infinite;
         pointer-events: none;
       }
     }
   }
-  
+
   .period {
     padding: 5px 12px;
     margin: 0 2px;
     border-radius: 8px;
     font-size: 13px;
     font-weight: 500;
-    
+
     &:hover {
       background-color: var(--klinecharts-pro-hover-background-color);
       transform: translateY(-1px);
     }
-    
+
     &:active {
       transform: scale(0.96);
     }
-    
+
     &:first-child {
       margin-left: 12px;
     }
   }
-  
-  .symbol + .period, .menu-container + .period {
+
+  .symbol+.period,
+  .menu-container+.period {
     margin-left: 12px;
   }
-  
+
   .tools {
     display: flex;
     flex-direction: row;
@@ -156,30 +157,45 @@
     font-size: 13px;
     font-weight: 450;
     color: var(--klinecharts-pro-text-second-color);
-    transition: 
+    transition:
       background-color @motion-fast @motion-ease,
       color @motion-fast @motion-ease,
       transform @motion-fast @motion-ease;
-    
+
     &:hover {
       background-color: var(--klinecharts-pro-hover-background-color);
       fill: var(--klinecharts-pro-text-color);
       color: var(--klinecharts-pro-text-color);
     }
-    
+
     &:active {
       transform: scale(0.97);
     }
-    
+
     svg {
       width: 16px;
       height: 16px;
       margin-right: 6px;
       opacity: 0.8;
     }
+
+    &.active {
+      background: linear-gradient(135deg,
+          rgba(0, 113, 227, 0.1) 0%,
+          rgba(0, 113, 227, 0.06) 100%);
+      color: var(--klinecharts-pro-primary-color);
+      fill: var(--klinecharts-pro-primary-color);
+      font-weight: 600;
+      box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+
+      svg {
+        opacity: 1;
+        fill: var(--klinecharts-pro-primary-color);
+      }
+    }
   }
-  
-  .period + .tools {
+
+  .period+.tools {
     margin-left: 12px;
   }
 }
