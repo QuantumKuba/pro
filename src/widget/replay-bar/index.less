@@ -1,0 +1,299 @@
+@import (reference) '../../base.less';
+
+.replay-bar-hover-zone {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  z-index: 99;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.@{prefix-cls}-replay-bar {
+  position: relative;
+  z-index: 100;
+  background: var(--klinecharts-pro-surface-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--klinecharts-pro-border-color);
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  transition: opacity @motion-slow @motion-ease, transform @motion-slow @motion-ease;
+
+  &.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  &.hidden {
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+  }
+}
+
+.replay-progress-container {
+  width: 100%;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.replay-progress-track {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  background: var(--klinecharts-pro-border-color);
+  border-radius: 2px;
+  transition: height @motion-fast @motion-ease;
+
+  .replay-progress-container:hover & {
+    height: 6px;
+  }
+}
+
+.replay-progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg,
+      var(--klinecharts-pro-primary-color) 0%,
+      var(--klinecharts-pro-primary-soft) 100%);
+  border-radius: 2px;
+  transition: width @motion-fast @motion-ease;
+}
+
+.replay-progress-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  width: 14px;
+  height: 14px;
+  background: var(--klinecharts-pro-primary-color);
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform @motion-fast @motion-spring;
+
+  .replay-progress-container:hover & {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.replay-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.replay-date-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.replay-label {
+  font-size: 12px;
+  color: var(--klinecharts-pro-text-second-color);
+  white-space: nowrap;
+}
+
+.replay-date-input {
+  background: var(--klinecharts-pro-hover-background-color);
+  border: 1px solid var(--klinecharts-pro-border-color);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--klinecharts-pro-text-color);
+  outline: none;
+  transition:
+    border-color @motion-fast @motion-ease,
+    box-shadow @motion-fast @motion-ease;
+
+  &:focus {
+    border-color: var(--klinecharts-pro-primary-color);
+    box-shadow: 0 0 0 3px var(--klinecharts-pro-selected-color);
+  }
+
+  &::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+    cursor: pointer;
+  }
+}
+
+.replay-playback-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.replay-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--klinecharts-pro-hover-background-color);
+  border: 1px solid var(--klinecharts-pro-border-color);
+  border-radius: 6px;
+  padding: 8px;
+  color: var(--klinecharts-pro-text-color);
+  cursor: pointer;
+  transition:
+    background-color @motion-fast @motion-ease,
+    transform @motion-fast @motion-spring,
+    box-shadow @motion-fast @motion-ease;
+
+  &:hover {
+    background: var(--klinecharts-pro-border-color);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.replay-btn-primary {
+  background: linear-gradient(180deg,
+      var(--klinecharts-pro-primary-color) 0%,
+      var(--klinecharts-pro-primary-soft) 100%);
+  border: none;
+  color: #ffffff;
+  padding: 10px;
+  box-shadow:
+    0 2px 8px rgba(0, 113, 227, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+
+  &:hover {
+    box-shadow:
+      0 4px 16px rgba(0, 113, 227, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+}
+
+.replay-btn-exit {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: auto;
+
+  span {
+    white-space: nowrap;
+  }
+}
+
+.replay-speed-section {
+  position: relative;
+}
+
+.replay-speed-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--klinecharts-pro-hover-background-color);
+  border: 1px solid var(--klinecharts-pro-border-color);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--klinecharts-pro-text-color);
+  cursor: pointer;
+  font-size: 12px;
+  transition:
+    background-color @motion-fast @motion-ease,
+    border-color @motion-fast @motion-ease;
+
+  &:hover {
+    background: var(--klinecharts-pro-border-color);
+  }
+}
+
+.replay-speed-label {
+  color: var(--klinecharts-pro-text-second-color);
+}
+
+.replay-speed-value {
+  font-weight: 600;
+  min-width: 28px;
+}
+
+.replay-speed-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 4px;
+  background: var(--klinecharts-pro-popover-background-color);
+  border: 1px solid var(--klinecharts-pro-border-color);
+  border-radius: 8px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: var(--klinecharts-pro-shadow);
+  z-index: 10;
+  animation: replayMenuFadeIn @motion-fast @motion-ease;
+}
+
+@keyframes replayMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.replay-speed-option {
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--klinecharts-pro-text-color);
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  transition: background-color @motion-fast @motion-ease;
+
+  &:hover {
+    background: var(--klinecharts-pro-hover-background-color);
+  }
+
+  &.active {
+    background: var(--klinecharts-pro-selected-color);
+    color: var(--klinecharts-pro-primary-color);
+  }
+}
+
+.replay-counter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--klinecharts-pro-text-color);
+  background: var(--klinecharts-pro-hover-background-color);
+  border-radius: 6px;
+  padding: 6px 12px;
+}
+
+.replay-counter-divider {
+  color: var(--klinecharts-pro-text-second-color);
+}

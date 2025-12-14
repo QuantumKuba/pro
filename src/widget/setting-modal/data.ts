@@ -14,7 +14,7 @@
 
 import i18n from '../../i18n'
 
-export function getOptions (locale: string) {
+export function getOptions(locale: string) {
   return [
     {
       key: 'candle.type',
@@ -27,6 +27,17 @@ export function getOptions (locale: string) {
         { key: 'candle_down_stroke', text: i18n('candle_down_stroke', locale) },
         { key: 'ohlc', text: i18n('ohlc', locale) },
         { key: 'area', text: i18n('area', locale) }
+      ]
+    },
+    {
+      key: 'candleFetchLimit',
+      text: i18n('candle_fetch_limit', locale),
+      component: 'select',
+      dataSource: [
+        { key: 500, text: '500' },
+        { key: 1000, text: '1000' },
+        { key: 2000, text: '2000' },
+        { key: 5000, text: '5000' }
       ]
     },
     {

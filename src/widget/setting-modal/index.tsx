@@ -76,7 +76,7 @@ const SettingModal: Component<SettingModalProps> = props => {
           ]}
           onSelected={(data) => {
             props.onLocaleChange((data as SelectDataSourceItem).key)
-          }}/>
+          }} />
         <For each={options()}>
           {
             option => {
@@ -92,7 +92,7 @@ const SettingModal: Component<SettingModalProps> = props => {
                       onSelected={(data) => {
                         const newValue = (data as SelectDataSourceItem).key
                         update(option, newValue)
-                      }}/>
+                      }} />
                   )
                   break
                 }
@@ -104,7 +104,7 @@ const SettingModal: Component<SettingModalProps> = props => {
                       onChange={() => {
                         const newValue = !open
                         update(option, newValue)
-                      }}/>
+                      }} />
                   )
                   break
                 }
@@ -118,7 +118,7 @@ const SettingModal: Component<SettingModalProps> = props => {
             }
           }
         </For>
-      </div> 
+      </div>
     </Modal>
   )
 }

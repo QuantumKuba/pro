@@ -31,13 +31,16 @@ import { SelectDataSourceItem, Loading } from './component'
 
 import {
   PeriodBar, DrawingBar, IndicatorModal, TimezoneModal, SettingModal,
-  ScreenshotModal, IndicatorSettingModal, SymbolSearchModal, PeriodSettingModal
+  ScreenshotModal, IndicatorSettingModal, SymbolSearchModal, PeriodSettingModal,
+  ReplayBar
 } from './widget'
 
 import { translateTimezone } from './widget/timezone-modal/data'
 
 import { SymbolInfo, Period, ChartProOptions, ChartPro } from './types'
 import ChartDataLoader from './DataLoader'
+import ReplayController from './ReplayController'
+import { ReplayState, ReplaySpeed, DEFAULT_REPLAY_STATE } from './ReplayTypes'
 
 type AxisType = 'normal' | 'percentage' | 'log'
 
@@ -295,19 +298,19 @@ interface PrevSymbolPeriod {
   period: Period
 }
 
-function createIndicator (widget: Chart, indicatorName: string, isStack?: boolean, paneOptions?: PaneOptions): Nullable<string> {
+function createIndicator(widget: Chart, indicatorName: string, isStack?: boolean, paneOptions?: PaneOptions): Nullable<string> {
   // VOL should never be on the candle_pane - it needs its own pane for proper scaling
   if (indicatorName === 'VOL') {
     // Remove id if it was set to candle_pane, and add gap for VOL pane
     const { id, ...restPaneOptions } = paneOptions || {}
-    paneOptions = { 
-      axis: { gap: { bottom: 2 } }, 
+    paneOptions = {
+      axis: { gap: { bottom: 2 } },
       ...restPaneOptions,
       // Only keep the id if it's NOT candle_pane
       ...(id && id !== 'candle_pane' ? { id } : {})
     }
   }
-  const indi =  widget.createIndicator({
+  const indi = widget.createIndicator({
     name: indicatorName,
     createTooltipDataSource: (param): IndicatorTooltipData => {
       const indiStyles = param.chart.getStyles().indicator
@@ -336,12 +339,13 @@ function createIndicator (widget: Chart, indicatorName: string, isStack?: boolea
         features: icons,
         legends: []
       }
-    }}, isStack, paneOptions) ?? null
+    }
+  }, isStack, paneOptions) ?? null
 
   return indi
 }
 
-export const [ widget, setWidget ] = createSignal<Nullable<Chart>>(null)
+export const [widget, setWidget] = createSignal<Nullable<Chart>>(null)
 export const [loadingVisible, setLoadingVisible] = createSignal(false)
 export const [symbol, setSymbol] = createSignal<Nullable<SymbolInfo>>(null)
 export const [period, setPeriod] = createSignal<Nullable<Period>>(null)
@@ -437,6 +441,365 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
   const [indicatorSettingModalParams, setIndicatorSettingModalParams] = createSignal({
     visible: false, indicatorName: '', paneId: '', calcParams: [] as Array<any>
   })
+
+  const [candleFetchLimit, setCandleFetchLimit] = createSignal(500)
+
+  // Replay mode state
+  const [replayActive, setReplayActive] = createSignal(false)
+  const [replayState, setReplayState] = createSignal<ReplayState>({ ...DEFAULT_REPLAY_STATE })
+
+  // Helper to trigger chart data reload (forces getBars to be called)
+  const triggerChartReload = () => {
+    const s = symbol()
+    if (s) {
+      widget()?.setSymbol({
+        ticker: s.ticker,
+        pricePrecision: s.pricePrecision,
+        volumePrecision: s.volumePrecision,
+      })
+    }
+  }
+
+  const [replayController] = createSignal<ReplayController>(new ReplayController({
+    onModeChange: (active) => setReplayActive(active),
+    onCandleProgress: (index, data) => {
+      setReplayState(prev => ({ ...prev, currentIndex: index }))
+      // Update the DataLoader's replay index
+      props.dataloader.updateReplayIndex(index)
+      // Suppress backward loading during playback chart reloads
+      props.dataloader.setSuppressBackwardLoading(true)
+      triggerChartReload()
+      // Allow backward loading again after a short delay (for user scrolling)
+      setTimeout(() => {
+        props.dataloader.setSuppressBackwardLoading(false)
+      }, 100)
+    },
+    onReplayEnd: () => {
+      // Optionally auto-pause when reaching the end
+    }
+  }))
+
+  // Start replay mode
+  const startReplay = async () => {
+    const chart = widget()
+    if (!chart) return
+
+    const s = symbol()
+    const p = period()
+    if (!s || !p) return
+
+    setLoadingVisible(true)
+
+    // Suspend live data subscription
+    props.dataloader.suspendSubscription()
+
+    // Load all historical data for replay
+    const timestamp = Date.now()
+    const [to] = props.dataloader.adjustFromTo(p, timestamp, 1)
+    const [from] = props.dataloader.adjustFromTo(p, to, props.dataloader.fetchLimit)
+
+    try {
+      const fullData = await props.dataloader.getHistoryData(s, p, from, to)
+
+      if (fullData && fullData.length > 0) {
+        // Default to starting replay from about 20% into the data
+        const startIndex = Math.floor(fullData.length * 0.2)
+        const startTimestamp = fullData[startIndex]?.timestamp || fullData[0].timestamp
+
+        // Set replay data in the DataLoader
+        props.dataloader.setReplayData(fullData, startIndex)
+
+        // Set up callback for when backward data is loaded during scrolling
+        props.dataloader.setOnBackwardDataLoaded((newCandleCount) => {
+          const updatedData = props.dataloader.getReplayData()
+          const newIndex = props.dataloader.visibleEndIndex
+
+          // Update ReplayState with new data (index shifts by the prepended amount)
+          setReplayState(prev => ({
+            ...prev,
+            fullData: updatedData,
+            totalCandles: updatedData.length,
+            currentIndex: newIndex
+          }))
+
+          // Also update the ReplayController's state
+          replayController().updateFullData(updatedData, newIndex)
+
+          // Suppress backward loading during this reload to prevent infinite loop
+          props.dataloader.setSuppressBackwardLoading(true)
+          triggerChartReload()
+          setTimeout(() => {
+            props.dataloader.setSuppressBackwardLoading(false)
+          }, 500)
+        })
+
+        setReplayState({
+          isActive: true,
+          isPaused: true,
+          speed: 1,
+          startTimestamp,
+          currentIndex: startIndex,
+          totalCandles: fullData.length,
+          fullData
+        })
+
+        replayController().setPeriod(p)
+        replayController().start(startTimestamp, fullData)
+
+        // Trigger chart reload - this will call getBars which now returns replay data
+        triggerChartReload()
+      }
+    } catch (error) {
+      console.error('Failed to load replay data:', error)
+      // Resume subscription on error
+      props.dataloader.clearReplayMode()
+      props.dataloader.resumeSubscription()
+    }
+
+    setLoadingVisible(false)
+  }
+
+  // Stop replay mode and restore normal chart
+  const stopReplay = async () => {
+    replayController().stop()
+    setReplayState({ ...DEFAULT_REPLAY_STATE })
+
+    // Clear replay mode from DataLoader
+    props.dataloader.clearReplayMode()
+
+    // Resume live data subscription
+    props.dataloader.resumeSubscription()
+
+    // Trigger chart reload to get live data
+    triggerChartReload()
+  }
+
+  // Handle date change in replay mode
+  const handleReplayDateChange = async (timestamp: number) => {
+    const state = replayState()
+
+    // Check if we need to fetch new data
+    // If we have data, and the target timestamp is within the range of our current fullData
+    const isDataAvailable = state.fullData.length > 0 &&
+      timestamp >= state.fullData[0].timestamp &&
+      timestamp <= state.fullData[state.fullData.length - 1].timestamp
+
+    if (isDataAvailable) {
+      // Data is available locally, just jump to it
+      let targetIndex = state.fullData.findIndex(d => d.timestamp >= timestamp)
+      if (targetIndex === -1) {
+        targetIndex = state.fullData.length - 1
+      }
+
+      // Update DataLoader and trigger reload
+      props.dataloader.updateReplayIndex(targetIndex)
+      replayController().goToIndex(targetIndex)
+      setReplayState(prev => ({
+        ...prev,
+        startTimestamp: timestamp,
+        currentIndex: targetIndex
+      }))
+      triggerChartReload()
+    } else {
+      // Data not available, need to fetch
+      setLoadingVisible(true)
+      const p = period()
+      const s = symbol()
+
+      if (!p || !s) {
+        setLoadingVisible(false)
+        return
+      }
+
+      try {
+        // Calculate period in milliseconds
+        let periodMs = 0
+        switch (p.type) {
+          case 'minute': periodMs = p.span * 60 * 1000; break
+          case 'hour': periodMs = p.span * 60 * 60 * 1000; break
+          case 'day': periodMs = p.span * 24 * 60 * 60 * 1000; break
+          case 'week': periodMs = p.span * 7 * 24 * 60 * 60 * 1000; break
+          case 'month': periodMs = p.span * 30 * 24 * 60 * 60 * 1000; break
+          default: periodMs = 60 * 1000
+        }
+
+        // Load data: some context before + future data to play into
+        const contextCount = 300
+        const futureCount = 1000
+        const fromTimestamp = timestamp - (contextCount * periodMs)
+        const toTimestamp = Math.min(timestamp + (futureCount * periodMs), Date.now())
+
+        const fullData = await props.dataloader.getHistoryData(s, p, fromTimestamp, toTimestamp)
+
+        if (fullData && fullData.length > 0) {
+          // Find target index in the new data
+          let startIndex = fullData.findIndex(d => d.timestamp >= timestamp)
+          if (startIndex === -1) {
+            startIndex = timestamp > fullData[fullData.length - 1].timestamp
+              ? fullData.length - 1
+              : 0
+          }
+
+          // Set replay data in the DataLoader
+          props.dataloader.setReplayData(fullData, startIndex)
+
+          // Set up callback for when backward data is loaded during scrolling
+          props.dataloader.setOnBackwardDataLoaded((newCandleCount) => {
+            const updatedData = props.dataloader.getReplayData()
+            const newIndex = props.dataloader.visibleEndIndex
+
+            setReplayState(prev => ({
+              ...prev,
+              fullData: updatedData,
+              totalCandles: updatedData.length,
+              currentIndex: newIndex
+            }))
+
+            replayController().updateFullData(updatedData, newIndex)
+
+            // Suppress backward loading during this reload to prevent infinite loop
+            props.dataloader.setSuppressBackwardLoading(true)
+            triggerChartReload()
+            setTimeout(() => {
+              props.dataloader.setSuppressBackwardLoading(false)
+            }, 500)
+          })
+
+          setReplayState({
+            isActive: true,
+            isPaused: true,
+            speed: state.speed,
+            startTimestamp: timestamp,
+            currentIndex: startIndex,
+            totalCandles: fullData.length,
+            fullData
+          })
+
+          replayController().setPeriod(p)
+          replayController().start(timestamp, fullData)
+
+          // Trigger chart reload
+          triggerChartReload()
+        }
+      } catch (e) {
+        console.error("Failed to load replay data for date", e)
+      } finally {
+        setLoadingVisible(false)
+      }
+    }
+  }
+
+  // Effect to handle period changes during replay mode
+  let prevPeriodRef: Period | null = null
+  createEffect(() => {
+    const p = period()
+    const isActive = replayActive()
+
+    // Skip if not in replay mode
+    if (!isActive || !p) {
+      prevPeriodRef = p
+      return
+    }
+
+    // Skip if period hasn't actually changed
+    if (prevPeriodRef && prevPeriodRef.type === p.type && prevPeriodRef.span === p.span) {
+      return
+    }
+
+    // Period changed while in replay mode - must reload data with new period
+    if (prevPeriodRef !== null) {
+      console.info('Period changed during replay, reloading data with new period', { from: prevPeriodRef, to: p })
+
+      // Pause playback during reload
+      replayController().pause()
+      setReplayState(prev => ({ ...prev, isPaused: true }))
+
+      // Get current timestamp to reload around
+      const currentTimestamp = replayState().startTimestamp
+      const s = symbol()
+
+      if (s) {
+        setLoadingVisible(true)
+
+        // Calculate period in milliseconds for the NEW period
+        let periodMs = 0
+        switch (p.type) {
+          case 'minute': periodMs = p.span * 60 * 1000; break
+          case 'hour': periodMs = p.span * 60 * 60 * 1000; break
+          case 'day': periodMs = p.span * 24 * 60 * 60 * 1000; break
+          case 'week': periodMs = p.span * 7 * 24 * 60 * 60 * 1000; break
+          case 'month': periodMs = p.span * 30 * 24 * 60 * 60 * 1000; break
+          default: periodMs = 60 * 1000
+        }
+
+        const contextCount = 300
+        const futureCount = 1000
+        const fromTimestamp = currentTimestamp - (contextCount * periodMs)
+        const toTimestamp = Math.min(currentTimestamp + (futureCount * periodMs), Date.now())
+
+        // Fetch new data with the new period
+        props.dataloader.getHistoryData(s, p, fromTimestamp, toTimestamp).then(fullData => {
+          if (fullData && fullData.length > 0) {
+            let startIndex = fullData.findIndex(d => d.timestamp >= currentTimestamp)
+            if (startIndex === -1) {
+              startIndex = currentTimestamp > fullData[fullData.length - 1].timestamp
+                ? fullData.length - 1
+                : 0
+            }
+
+            // Update DataLoader with new period's data
+            props.dataloader.setReplayData(fullData, startIndex)
+
+            // Set up callback for when backward data is loaded during scrolling
+            props.dataloader.setOnBackwardDataLoaded((newCandleCount) => {
+              const updatedData = props.dataloader.getReplayData()
+              const newIndex = props.dataloader.visibleEndIndex
+
+              setReplayState(prev => ({
+                ...prev,
+                fullData: updatedData,
+                totalCandles: updatedData.length,
+                currentIndex: newIndex
+              }))
+
+              replayController().updateFullData(updatedData, newIndex)
+
+              // Suppress backward loading during this reload to prevent infinite loop
+              props.dataloader.setSuppressBackwardLoading(true)
+              triggerChartReload()
+              setTimeout(() => {
+                props.dataloader.setSuppressBackwardLoading(false)
+              }, 500)
+            })
+
+            setReplayState({
+              isActive: true,
+              isPaused: true,
+              speed: replayState().speed,
+              startTimestamp: currentTimestamp,
+              currentIndex: startIndex,
+              totalCandles: fullData.length,
+              fullData
+            })
+
+            replayController().setPeriod(p)
+            replayController().start(currentTimestamp, fullData)
+
+            // Update widget period and trigger chart reload
+            widget()?.setPeriod(p)
+            triggerChartReload()
+          }
+          setLoadingVisible(false)
+        }).catch(e => {
+          console.error('Failed to reload replay data for new period', e)
+          setLoadingVisible(false)
+        })
+      }
+    }
+
+    prevPeriodRef = p
+  })
+
   setPeriod(props.period)
   setSymbol(props.symbol)
 
@@ -467,7 +830,7 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
     getPeriod: () => period()!,
     getInstanceApi: () => widget(),
     resize: () => widget()?.resize(),
-    dispose: () => {}
+    dispose: () => { }
   })
 
   const documentResize = () => {
@@ -527,12 +890,12 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
             }
             const next = timestamp + periodMs
             const remaining = Math.max(0, next - current)
-            
+
             const totalSeconds = Math.floor(remaining / 1000)
             const hours = Math.floor(totalSeconds / 3600)
             const minutes = Math.floor((totalSeconds % 3600) / 60)
             const seconds = totalSeconds % 60
-            
+
             const pad = (n: number) => n.toString().padStart(2, '0')
             if (periodMs >= 60 * 60 * 1000) {
               return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
@@ -572,37 +935,37 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
         console.info('onIndicatorTooltipFeatureClick', data)
         const _data = data as { paneId: string, feature: TooltipFeatureStyle, indicator: Indicator }
         // if (_data.indicatorName) {
-          switch (_data.feature.id) {
-            case 'visible': {
-              widget()?.overrideIndicator({ name: _data.indicator.name, visible: true, paneId: _data.paneId })
-              break
-            }
-            case 'invisible': {
-              widget()?.overrideIndicator({ name: _data.indicator.name, visible: false, paneId: _data.paneId })
-              break
-            }
-            case 'setting': {
-              const indicator = widget()?.getIndicators({ paneId: _data.paneId, name: _data.indicator.name, id: _data.indicator.id }).at(0)
-              if (!indicator) return
-              setIndicatorSettingModalParams({
-                visible: true, indicatorName: _data.indicator.name, paneId: _data.paneId, calcParams: indicator.calcParams
-              })
-              break
-            }
-            case 'close': {
-              if (_data.paneId === 'candle_pane') {
-                const newMainIndicators = [...mainIndicators()]
-                widget()?.removeIndicator({ paneId: _data.paneId, name: _data.indicator.name, id: _data.indicator.id })
-                newMainIndicators.splice(newMainIndicators.indexOf(_data.indicator.name), 1)
-                setMainIndicators(newMainIndicators)
-              } else {
-                const newIndicators: Record<string, string> = { ...subIndicators() }
-                widget()?.removeIndicator({ paneId: _data.paneId, name: _data.indicator.name, id: _data.indicator.id })
-                delete newIndicators[_data.indicator.name]
-                setSubIndicators(newIndicators)
-              }
+        switch (_data.feature.id) {
+          case 'visible': {
+            widget()?.overrideIndicator({ name: _data.indicator.name, visible: true, paneId: _data.paneId })
+            break
+          }
+          case 'invisible': {
+            widget()?.overrideIndicator({ name: _data.indicator.name, visible: false, paneId: _data.paneId })
+            break
+          }
+          case 'setting': {
+            const indicator = widget()?.getIndicators({ paneId: _data.paneId, name: _data.indicator.name, id: _data.indicator.id }).at(0)
+            if (!indicator) return
+            setIndicatorSettingModalParams({
+              visible: true, indicatorName: _data.indicator.name, paneId: _data.paneId, calcParams: indicator.calcParams
+            })
+            break
+          }
+          case 'close': {
+            if (_data.paneId === 'candle_pane') {
+              const newMainIndicators = [...mainIndicators()]
+              widget()?.removeIndicator({ paneId: _data.paneId, name: _data.indicator.name, id: _data.indicator.id })
+              newMainIndicators.splice(newMainIndicators.indexOf(_data.indicator.name), 1)
+              setMainIndicators(newMainIndicators)
+            } else {
+              const newIndicators: Record<string, string> = { ...subIndicators() }
+              widget()?.removeIndicator({ paneId: _data.paneId, name: _data.indicator.name, id: _data.indicator.id })
+              delete newIndicators[_data.indicator.name]
+              setSubIndicators(newIndicators)
             }
           }
+        }
         // }
       })
 
@@ -656,11 +1019,11 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
       }
       if (prev?.symbol?.ticker !== s!.ticker)
         console.info('ticker changed: set symbol', s)
-        widget()?.setSymbol({
-          ticker: s!.ticker,
-          pricePrecision: s!.pricePrecision,
-          volumePrecision: s!.volumePrecision,
-        })
+      widget()?.setSymbol({
+        ticker: s!.ticker,
+        pricePrecision: s!.pricePrecision,
+        volumePrecision: s!.volumePrecision,
+      })
 
       onCleanup(() => {
         // Optional cleanup logic before re-run
@@ -840,13 +1203,13 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
 
   return (
     <>
-      <i class="icon-close klinecharts-pro-load-icon"/>
+      <i class="icon-close klinecharts-pro-load-icon" />
       <Show when={symbolSearchModalVisible()}>
         <SymbolSearchModal
           locale={locale()}
           datafeed={props.dataloader}
           onSymbolSelected={symbol => { setSymbol(symbol) }}
-          onClose={() => { setSymbolSearchModalVisible(false) }}/>
+          onClose={() => { setSymbolSearchModalVisible(false) }} />
       </Show>
       <Show when={indicatorModalVisible()}>
         <IndicatorModal
@@ -860,7 +1223,7 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
               createIndicator(widget()!, data.name, true, { id: 'candle_pane' })
               newMainIndicators.push(data.name)
             } else {
-              widget()?.removeIndicator({name: data.name, paneId: 'candle_pane', id: data.id ?? undefined})
+              widget()?.removeIndicator({ name: data.name, paneId: 'candle_pane', id: data.id ?? undefined })
               newMainIndicators.splice(newMainIndicators.indexOf(data.name), 1)
             }
             setMainIndicators(newMainIndicators)
@@ -875,12 +1238,12 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
               }
             } else {
               if (data.id) {
-                widget()?.removeIndicator({name: data.name, id: data.id})
+                widget()?.removeIndicator({ name: data.name, id: data.id })
                 delete newSubIndicators[data.name]
               }
             }
             setSubIndicators(newSubIndicators)
-          }}/>
+          }} />
       </Show>
       <Show when={timezoneModalVisible()}>
         <TimezoneModal
@@ -901,10 +1264,18 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
             }
             styles.yAxis.type = axis.type
             styles.yAxis.reverse = axis.reverse
+              // Inject candleFetchLimit
+              ; (styles as any).candleFetchLimit = candleFetchLimit()
             return styles as Styles
           })()}
           onClose={() => { setSettingModalVisible(false) }}
           onChange={style => {
+            const fetchLimit = (style as any).candleFetchLimit
+            if (fetchLimit) {
+              setCandleFetchLimit(fetchLimit)
+              props.dataloader.setFetchLimit(fetchLimit)
+              delete (style as any).candleFetchLimit
+            }
             setStyleOverrides(() => style)
           }}
           onLocaleChange={setLocale}
@@ -916,6 +1287,9 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
               lodashSet(style, 'yAxis.reverse', defaultAxisSettings.reverse)
               applyAxisOverride(defaultAxisSettings)
               setStyleOverrides(() => style)
+              // Reset fetch limit
+              setCandleFetchLimit(500)
+              props.dataloader.setFetchLimit(500)
               return
             }
             options.forEach(option => {
@@ -926,6 +1300,9 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
             lodashSet(style, 'yAxis.reverse', defaultAxisSettings.reverse)
             applyAxisOverride(defaultAxisSettings)
             setStyleOverrides(() => style)
+            // Reset fetch limit
+            setCandleFetchLimit(500)
+            props.dataloader.setFetchLimit(500)
           }}
         />
       </Show>
@@ -941,7 +1318,7 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
           locale={locale()}
           params={indicatorSettingModalParams()}
           onClose={() => { setIndicatorSettingModalParams({ visible: false, indicatorName: '', paneId: '', calcParams: [] }) }}
-          onConfirm={(params)=> {
+          onConfirm={(params) => {
             const modalParams = indicatorSettingModalParams()
             widget()?.overrideIndicator({ name: modalParams.indicatorName, calcParams: params, paneId: modalParams.paneId })
           }}
@@ -953,7 +1330,7 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
           onClose={() => { setPeriodSettingModalVisible(false) }}
           onConfirm={p => {
             setPeriod(p)
-          }}/>
+          }} />
       </Show>
       <PeriodBar
         locale={locale()}
@@ -961,11 +1338,12 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
         spread={drawingBarVisible()}
         period={period()!}
         periods={props.periods}
+        replayActive={replayActive()}
         onMenuClick={async () => {
           try {
             await startTransition(() => setDrawingBarVisible(!drawingBarVisible()))
             widget()?.resize()
-          } catch (e) {}    
+          } catch (e) { }
         }}
         onSymbolClick={() => { setSymbolSearchModalVisible(!symbolSearchModalVisible()) }}
         onPeriodChange={setPeriod}
@@ -979,16 +1357,23 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
           }
         }}
         onPeriodSettingClick={() => { setPeriodSettingModalVisible(true) }}
+        onReplayClick={() => {
+          if (replayActive()) {
+            stopReplay()
+          } else {
+            startReplay()
+          }
+        }}
       />
       <div
         class="klinecharts-pro-content">
         <Show when={loadingVisible()}>
-          <Loading/>
+          <Loading />
         </Show>
         <Show when={drawingBarVisible()}>
           <DrawingBar
             locale={props.locale}
-            onDrawingItemClick={overlay => { 
+            onDrawingItemClick={overlay => {
               // Ensure overlays created from the drawing bar belong to the drawing group
               const DEFAULT_GROUP_ID = 'drawing_tools'
 
@@ -1020,12 +1405,44 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
             onModeChange={mode => { widget()?.overrideOverlay({ mode: mode as OverlayMode }) }}
             onLockChange={lock => { widget()?.overrideOverlay({ lock }) }}
             onVisibleChange={visible => { widget()?.overrideOverlay({ visible }) }}
-            onRemoveClick={(groupId) => { widget()?.removeOverlay({ groupId }) }}/>
+            onRemoveClick={(groupId) => { widget()?.removeOverlay({ groupId }) }} />
         </Show>
         <div
           ref={widgetRef}
           class='klinecharts-pro-widget'
-          data-drawing-bar-visible={drawingBarVisible()}/>
+          data-drawing-bar-visible={drawingBarVisible()} />
+        <Show when={replayActive()}>
+          <ReplayBar
+            locale={locale()}
+            isPaused={replayState().isPaused}
+            speed={replayState().speed}
+            currentIndex={replayState().currentIndex}
+            totalCandles={replayState().totalCandles}
+            startTimestamp={replayState().startTimestamp}
+            onPlay={() => {
+              replayController().play()
+              setReplayState(prev => ({ ...prev, isPaused: false }))
+            }}
+            onPause={() => {
+              replayController().pause()
+              setReplayState(prev => ({ ...prev, isPaused: true }))
+            }}
+            onStepForward={() => replayController().stepForward()}
+            onStepBackward={() => replayController().stepBackward()}
+            onSpeedChange={(speed: ReplaySpeed) => {
+              replayController().setSpeed(speed)
+              setReplayState(prev => ({ ...prev, speed }))
+            }}
+            onSeek={(index: number) => {
+              replayController().goToIndex(index)
+              props.dataloader.updateReplayIndex(index)
+              setReplayState(prev => ({ ...prev, currentIndex: index }))
+              triggerChartReload()
+            }}
+            onExit={stopReplay}
+            onDateChange={handleReplayDateChange}
+          />
+        </Show>
       </div>
     </>
   )

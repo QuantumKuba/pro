@@ -125,5 +125,15 @@
   "log": "Log",
   "reverse_coordinate": "Reverse Coordinate",
   "grid_show": "Show Grids",
-  "restore_default": "Restore Defaults"
+  "restore_default": "Restore Defaults",
+  "replay": "Replay",
+  "replay_start": "Start Replay",
+  "replay_stop": "Exit Replay",
+  "replay_pause": "Pause",
+  "replay_play": "Play",
+  "replay_step_forward": "Next Candle",
+  "replay_step_back": "Previous Candle",
+  "replay_speed": "Speed",
+  "replay_select_date": "Start Date",
+  "candle_fetch_limit": "Candle Fetch Limit"
 }

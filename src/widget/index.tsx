@@ -21,9 +21,11 @@ import ScreenshotModal from './screenshot-modal'
 import IndicatorSettingModal from './indicator-setting-modal'
 import PeriodSettingModal from './period-setting-modal'
 import SymbolSearchModal from './symbol-search-modal'
+import ReplayBar from './replay-bar'
 
 export {
   PeriodBar, DrawingBar, IndicatorModal,
   TimezoneModal, SettingModal, ScreenshotModal,
-  IndicatorSettingModal, PeriodSettingModal, SymbolSearchModal
+  IndicatorSettingModal, PeriodSettingModal, SymbolSearchModal,
+  ReplayBar
 }

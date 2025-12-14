@@ -47,7 +47,7 @@ interface IntervalStrategy {
 
 function getStrategy(period: Period): IntervalStrategy {
   const { span, type } = period
-  
+
   // Check if natively supported
   // @ts-expect-error
   if (SUPPORTED_INTERVALS[type] && SUPPORTED_INTERVALS[type].includes(span)) {
@@ -91,11 +91,11 @@ function getStrategy(period: Period): IntervalStrategy {
   // But what if 90 minutes -> 1 hour? No.
   // What if 1 week? Binance supports 1w.
   // What if 2 weeks? 1w * 2.
-  
+
   // If we are here, we didn't find a divisor in the same unit.
   // e.g. 7 minutes. Divisor 1m.
   // e.g. 27 minutes. Divisor 3m (handled above).
-  
+
   // Fallback to smallest unit if possible
   if (type === 'minute') {
     return { interval: '1m', multiplier: span, baseSpan: 1, baseType: 'minute' }
@@ -115,7 +115,7 @@ export default class BinanceDatafeed implements Datafeed {
   private _ws: WebSocket | null = null
   private _currentSymbol: string | null = null
   private _currentStrategy: IntervalStrategy | null = null
-  
+
   // Store the base candles for the current aggregated period
   // Key: timestamp of the base candle
   private _currentBaseCandles: Map<number, KLineData> = new Map()
@@ -123,7 +123,7 @@ export default class BinanceDatafeed implements Datafeed {
   async searchSymbols(search?: string): Promise<SymbolInfo[]> {
     if (!search) return SYMBOLS
     const searchLower = search.toLowerCase()
-    return SYMBOLS.filter(s => 
+    return SYMBOLS.filter(s =>
       s.ticker.toLowerCase().includes(searchLower) ||
       s.name?.toLowerCase().includes(searchLower) ||
       s.shortName?.toLowerCase().includes(searchLower)
@@ -146,7 +146,7 @@ export default class BinanceDatafeed implements Datafeed {
     if (strategy.baseType === 'month') unitMs = 30 * 24 * 60 * 60 * 1000
 
     const baseDuration = strategy.baseSpan * unitMs
-    
+
     // Calculate aggregation duration to ensure we fetch the start of the current bucket
     // This is crucial for the WebSocket subscription to continue correctly without gaps or jumps
     const aggDuration = strategy.multiplier * baseDuration
@@ -158,17 +158,25 @@ export default class BinanceDatafeed implements Datafeed {
     const neededCandles = Math.ceil((to - from) / baseDuration)
     const limit = Math.min(1000, Math.max(1, neededCandles, candlesInCurrentBucket))
 
-    const url = `${BINANCE_API}/klines?symbol=${symbol.ticker}&interval=${strategy.interval}&endTime=${to}&limit=${limit}`
-    
+    // Ensure 'to' is a valid number and integer
+    if (!to || isNaN(to) || to <= 0) {
+      console.warn('BinanceDatafeed: Invalid "to" timestamp for history fetch:', to)
+      return []
+    }
+    const safeTo = Math.floor(to)
+
+    const url = `${BINANCE_API}/klines?symbol=${symbol.ticker}&interval=${strategy.interval}&endTime=${safeTo}&limit=${limit}`
+    console.info('BinanceDatafeed fetching:', url)
+
     try {
       const response = await fetch(url)
       const data = await response.json()
-      
+
       if (!Array.isArray(data)) {
         console.error('Binance API error:', data)
         return []
       }
-      
+
       const baseKlines: KLineData[] = data.map((kline: any[]) => ({
         timestamp: kline[0],
         open: parseFloat(kline[1]),
@@ -196,12 +204,12 @@ export default class BinanceDatafeed implements Datafeed {
         // For months/weeks this simple math might be slightly off due to calendar, but for minutes/hours it's fine.
         // For Binance, candles are usually aligned.
         // We can use the timestamp of the base candle to determine the bucket.
-        
+
         // However, simply taking floor might not work if the start time is not 0-aligned (e.g. weekly starts on Monday).
         // But let's assume standard alignment.
-        
+
         const aggTimestamp = Math.floor(k.timestamp / aggDuration) * aggDuration
-        
+
         if (currentAgg && currentAgg.timestamp !== aggTimestamp) {
           result.push(currentAgg)
           currentAgg = null
@@ -251,18 +259,18 @@ export default class BinanceDatafeed implements Datafeed {
   ): void {
     const strategy = getStrategy(period)
     const streamName = `${symbol.ticker.toLowerCase()}@kline_${strategy.interval}`
-    
+
     // Close existing connection if symbol/interval changed
     if (this._ws && (this._currentSymbol !== symbol.ticker || this._currentStrategy?.interval !== strategy.interval)) {
       this._ws.close()
       this._ws = null
     }
-    
+
     if (!this._ws) {
       this._ws = new WebSocket(`${BINANCE_WS}/${streamName}`)
       this._currentSymbol = symbol.ticker
       this._currentStrategy = strategy
-      
+
       this._ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
@@ -299,10 +307,10 @@ export default class BinanceDatafeed implements Datafeed {
             // Check the timestamp of the first candle in the map
             const firstBaseTimestamp = this._currentBaseCandles.keys().next().value
             if (firstBaseTimestamp !== undefined) {
-               const firstAggTimestamp = Math.floor(firstBaseTimestamp / aggDuration) * aggDuration
-               if (firstAggTimestamp !== aggTimestamp) {
-                 this._currentBaseCandles.clear()
-               }
+              const firstAggTimestamp = Math.floor(firstBaseTimestamp / aggDuration) * aggDuration
+              if (firstAggTimestamp !== aggTimestamp) {
+                this._currentBaseCandles.clear()
+              }
             }
 
             this._currentBaseCandles.set(baseCandle.timestamp, baseCandle)
@@ -311,7 +319,7 @@ export default class BinanceDatafeed implements Datafeed {
             let aggCandle: KLineData | null = null
             // Sort by timestamp to ensure correct Open/Close
             const sortedBase = Array.from(this._currentBaseCandles.values()).sort((a, b) => a.timestamp - b.timestamp)
-            
+
             sortedBase.forEach(k => {
               if (!aggCandle) {
                 aggCandle = {
@@ -340,11 +348,11 @@ export default class BinanceDatafeed implements Datafeed {
           console.error('WebSocket message error:', error)
         }
       }
-      
+
       this._ws.onerror = (error) => {
         console.error('WebSocket error:', error)
       }
-      
+
       this._ws.onclose = () => {
         console.log('WebSocket closed')
       }
