@@ -19,12 +19,20 @@ import xabcd from './xabcd'
 import measure from './measure'
 import brush from './brush'
 
+// Trading tools
+import longPosition from './longPosition'
+import shortPosition from './shortPosition'
+import forecastLine from './forecastLine'
+import ghostFeed from './ghostFeed'
+
 const overlays = [
   arrow,
   circle, rect, triangle, parallelogram,
   fibonacciCircle, fibonacciSegment, fibonacciSpiral,
   fibonacciSpeedResistanceFan, fibonacciExtension, gannBox,
-  threeWaves, fiveWaves, eightWaves, anyWaves, abcd, xabcd, measure, brush
+  threeWaves, fiveWaves, eightWaves, anyWaves, abcd, xabcd, measure, brush,
+  // Trading tools
+  longPosition, shortPosition, forecastLine, ghostFeed
 ]
 
 export default overlays

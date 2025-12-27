@@ -20,7 +20,7 @@ import { List } from '../../component'
 import {
   createSingleLineOptions, createMoreLineOptions,
   createPolygonOptions, createFibonacciOptions, createWaveOptions,
-  createMagnetOptions, createDrawingOptions,
+  createMagnetOptions, createDrawingOptions, createTradingToolsOptions,
   Icon
 } from './icons'
 
@@ -60,6 +60,7 @@ const DrawingBar: Component<DrawingBarProps> = props => {
   const [drawingIcon, setDrawingIcon] = createSignal('rect')
   const [fibonacciIcon, setFibonacciIcon] = createSignal('fibonacciLine')
   const [waveIcon, setWaveIcon] = createSignal('xabcd')
+  const [tradingIcon, setTradingIcon] = createSignal('longPosition')
 
   const [modeIcon, setModeIcon] = createSignal('weak_magnet')
   const [mode, setMode] = createSignal('normal')
@@ -84,7 +85,8 @@ const DrawingBar: Component<DrawingBarProps> = props => {
       { key: 'polygon', icon: polygonIcon(), list: createPolygonOptions(props.locale), setter: setPolygonIcon },
       { key: 'drawing', icon: drawingIcon(), list: createDrawingOptions(props.locale), setter: setDrawingIcon },
       { key: 'fibonacci', icon: fibonacciIcon(), list: createFibonacciOptions(props.locale), setter: setFibonacciIcon },
-      { key: 'wave', icon: waveIcon(), list: createWaveOptions(props.locale), setter: setWaveIcon }
+      { key: 'wave', icon: waveIcon(), list: createWaveOptions(props.locale), setter: setWaveIcon },
+      { key: 'trading', icon: tradingIcon(), list: createTradingToolsOptions(props.locale), setter: setTradingIcon }
     ]
   })
 

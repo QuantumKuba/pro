@@ -47,6 +47,13 @@ import xabcd from './xabcd'
 import measure from './measure'
 import brush from './brush'
 
+// Trading tools
+import longPosition from './longPosition'
+import shortPosition from './shortPosition'
+import forecastLine from './forecastLine'
+import ghostFeed from './ghostFeed'
+import tradeLog from './tradeLog'
+
 import weakMagnet from './weakMagnet'
 import strongMagnet from './strongMagnet'
 
@@ -95,6 +102,12 @@ export const mapping = {
   xabcd,
   measure,
   brush,
+  // Trading tools
+  longPosition,
+  shortPosition,
+  forecastLine,
+  ghostFeed,
+  tradeLog,
   weak_magnet: weakMagnet,
   strong_magnet: strongMagnet,
   lock,
@@ -104,8 +117,8 @@ export const mapping = {
   remove
 }
 
-export function createSingleLineOptions (locale: string): SelectDataSourceItem[] {
-  return  [
+export function createSingleLineOptions(locale: string): SelectDataSourceItem[] {
+  return [
     { key: 'horizontalStraightLine', text: i18n('horizontal_straight_line', locale) },
     { key: 'horizontalRayLine', text: i18n('horizontal_ray_line', locale) },
     { key: 'horizontalSegment', text: i18n('horizontal_segment', locale) },
@@ -120,20 +133,20 @@ export function createSingleLineOptions (locale: string): SelectDataSourceItem[]
   ]
 }
 
-export function createMeasureOptions (locale: string): SelectDataSourceItem[] {
+export function createMeasureOptions(locale: string): SelectDataSourceItem[] {
   return [
     { key: 'measure', text: i18n('measure', locale) }
   ]
 }
 
-export function createMoreLineOptions (locale: string): SelectDataSourceItem[] {
+export function createMoreLineOptions(locale: string): SelectDataSourceItem[] {
   return [
     { key: 'priceChannelLine', text: i18n('price_channel_line', locale) },
     { key: 'parallelStraightLine', text: i18n('parallel_straight_line', locale) }
   ]
 }
 
-export function createPolygonOptions (locale: string): SelectDataSourceItem[] {
+export function createPolygonOptions(locale: string): SelectDataSourceItem[] {
   return [
     { key: 'circle', text: i18n('circle', locale) },
     { key: 'parallelogram', text: i18n('parallelogram', locale) },
@@ -141,14 +154,14 @@ export function createPolygonOptions (locale: string): SelectDataSourceItem[] {
   ]
 }
 
-export function createDrawingOptions (locale: string): SelectDataSourceItem[] {
+export function createDrawingOptions(locale: string): SelectDataSourceItem[] {
   return [
     { key: 'rect', text: i18n('rect', locale) },
     { key: 'brush', text: i18n('brush', locale) }
   ]
 }
 
-export function createFibonacciOptions (locale: string): SelectDataSourceItem[] {
+export function createFibonacciOptions(locale: string): SelectDataSourceItem[] {
   return [
     { key: 'fibonacciLine', text: i18n('fibonacci_line', locale) },
     { key: 'fibonacciSegment', text: i18n('fibonacci_segment', locale) },
@@ -160,7 +173,7 @@ export function createFibonacciOptions (locale: string): SelectDataSourceItem[] 
   ]
 }
 
-export function createWaveOptions (locale: string): SelectDataSourceItem[] {
+export function createWaveOptions(locale: string): SelectDataSourceItem[] {
   return [
     { key: 'xabcd', text: i18n('xabcd', locale) },
     { key: 'abcd', text: i18n('abcd', locale) },
@@ -171,10 +184,19 @@ export function createWaveOptions (locale: string): SelectDataSourceItem[] {
   ]
 }
 
-export function createMagnetOptions (locale: string): SelectDataSourceItem[] {
+export function createMagnetOptions(locale: string): SelectDataSourceItem[] {
   return [
     { key: 'weak_magnet', text: i18n('weak_magnet', locale) },
     { key: 'strong_magnet', text: i18n('strong_magnet', locale) }
+  ]
+}
+
+export function createTradingToolsOptions(locale: string): SelectDataSourceItem[] {
+  return [
+    { key: 'longPosition', text: i18n('long_position', locale) },
+    { key: 'shortPosition', text: i18n('short_position', locale) },
+    { key: 'forecastLine', text: i18n('forecast_line', locale) },
+    { key: 'ghostFeed', text: i18n('ghost_feed', locale) }
   ]
 }
 
