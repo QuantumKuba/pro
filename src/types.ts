@@ -59,6 +59,7 @@ export interface ChartProOptions {
   mainIndicators?: string[]
   subIndicators?: string[]
   datafeed: Datafeed
+  onSymbolChange?: (symbol: SymbolInfo) => void
 }
 
 export interface ChartPro {

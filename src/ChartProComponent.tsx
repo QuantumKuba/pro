@@ -1021,8 +1021,13 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
         console.info('period changed: set period', p)
         widget()?.setPeriod(p!)
       }
-      if (prev?.symbol?.ticker !== s!.ticker)
+      if (prev?.symbol?.ticker !== s!.ticker) {
         console.info('ticker changed: set symbol', s)
+        // Notify parent of symbol change
+        if (props.onSymbolChange && s) {
+          props.onSymbolChange(s)
+        }
+      }
       widget()?.setSymbol({
         ticker: s!.ticker,
         pricePrecision: s!.pricePrecision,

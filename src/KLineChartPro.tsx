@@ -71,6 +71,7 @@ export default class KLineChartPro implements ChartPro {
           timezone={options.timezone ?? 'Etc/UTC'}
           mainIndicators={options.mainIndicators ?? ['MA']}
           subIndicators={options.subIndicators ?? ['VOL']}
+          onSymbolChange={options.onSymbolChange}
           dataloader={dataLoader}/>
       ),
       this._container
