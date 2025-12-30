@@ -3,13 +3,14 @@
  * Landing page with market overview and top movers
  */
 
-import { createSignal, onMount, onCleanup, Show, type Component, type JSX } from 'solid-js'
+import { createSignal, onMount, onCleanup, type Component } from 'solid-js'
 import { type SymbolInfo } from '../types'
 import { marketDataService } from '../services'
 
 import { MarketOverview } from './MarketOverview'
 import { TopMoversWidget } from './TopMoversWidget'
 import { MiniChartWidget } from './MiniChartWidget'
+import { SettingsModal, loadSelectedCoins, saveSelectedCoins } from './SettingsModal'
 
 import './dashboard.less'
 
@@ -20,6 +21,7 @@ export interface CryptoDashboardProps {
 
 export const CryptoDashboard: Component<CryptoDashboardProps> = (props) => {
   const [showSettings, setShowSettings] = createSignal(false)
+  const [selectedCoins, setSelectedCoins] = createSignal<string[]>(loadSelectedCoins())
   
   onMount(() => {
     // Connect to market data on mount
@@ -39,8 +41,11 @@ export const CryptoDashboard: Component<CryptoDashboardProps> = (props) => {
 
   const handleSettingsClick = () => {
     setShowSettings(true)
-    // TODO: Implement settings modal for customizing featured coins
-    console.log('Settings clicked - feature to be implemented')
+  }
+
+  const handleSettingsSave = (coins: string[]) => {
+    setSelectedCoins(coins)
+    saveSelectedCoins(coins)
   }
 
   return (
@@ -79,17 +84,23 @@ export const CryptoDashboard: Component<CryptoDashboardProps> = (props) => {
 
           {/* Mini Charts for Featured Coins */}
           <MiniChartWidget 
+            coins={selectedCoins()}
             onCoinClick={handleCoinClick}
             onSettingsClick={handleSettingsClick}
           />
 
-          {/* Top Gainers Widget */}
-          <TopMoversWidget onCoinClick={handleCoinClick} />
-
-          {/* Top Losers Widget - Second instance */}
+          {/* Top Movers Widget */}
           <TopMoversWidget onCoinClick={handleCoinClick} />
         </div>
       </main>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={showSettings()}
+        onClose={() => setShowSettings(false)}
+        selectedCoins={selectedCoins()}
+        onSave={handleSettingsSave}
+      />
     </div>
   )
 }

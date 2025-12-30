@@ -25,6 +25,8 @@
 @accent-cyan: #36def3;
 
 @gradient-primary: linear-gradient(135deg, @accent-blue 0%, @accent-cyan 50%, #39ef85 100%);
+@glass-border: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+@glass-glow: 0 0 40px rgba(54, 222, 243, 0.1);
 
 // Animations
 @keyframes pulse {
@@ -62,8 +64,9 @@
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid @border-color;
-    background: rgba(10, 10, 11, 0.95);
-    backdrop-filter: blur(20px);
+    background: rgba(10, 10, 11, 0.85);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -121,18 +124,31 @@
   }
 }
 
-// Card Component
 .dashboard-card {
-  background: @bg-card;
-  border-radius: 16px;
+  background: rgba(22, 22, 26, 0.6);
+  border-radius: 20px;
   border: 1px solid @border-color;
-  backdrop-filter: blur(20px);
-  transition: all 0.3s ease;
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   animation: slideUp 0.5s ease-out;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+  }
 
   &:hover {
     border-color: @border-color-hover;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), @glass-glow;
+    transform: translateY(-2px);
   }
 
   &__header {
@@ -172,32 +188,48 @@
 }
 
 .stat-card {
-  background: @bg-card;
-  border-radius: 12px;
+  background: rgba(22, 22, 26, 0.6);
+  border-radius: 16px;
   border: 1px solid @border-color;
-  padding: 20px;
-  transition: all 0.3s ease;
+  padding: 24px;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   animation: slideUp 0.5s ease-out;
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%);
+  }
 
   &:hover {
     border-color: @border-color-hover;
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
   }
 
   &__label {
     font-size: 13px;
     color: @text-muted;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
   &__value {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 700;
     color: @text-primary;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
+    letter-spacing: -0.02em;
   }
 
   &__change {
@@ -225,13 +257,9 @@
   }
 }
 
-// Top Movers Widget
+// Top Movers Widget - Full width since we only have one
 .top-movers {
-  grid-column: span 6;
-
-  @media (max-width: 1000px) {
-    grid-column: span 12;
-  }
+  grid-column: span 12;
 
   &__tabs {
     display: flex;
@@ -589,5 +617,267 @@
     flex: 1;
     width: 100%;
     min-height: 0;
+  }
+}
+
+// Settings Modal (macOS Style)
+.settings-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalPop {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.settings-modal {
+  background: rgba(30, 30, 35, 0.6);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(50px) saturate(180%);
+  -webkit-backdrop-filter: blur(50px) saturate(180%);
+  width: 480px;
+  max-width: 90vw;
+  max-height: 85vh;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+
+  &__header {
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  &__title {
+    font-size: 15px;
+    font-weight: 600;
+    color: @text-primary;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  &__body {
+    padding: 0;
+    overflow-y: auto;
+    flex: 1;
+    
+    // Custom scrollbar
+    &::-webkit-scrollbar {
+      width: 10px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      border: 3px solid transparent;
+      background-clip: content-box;
+      
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+      }
+    }
+  }
+
+  &__section {
+    padding: 24px;
+  }
+
+  &__section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: @text-primary;
+    margin: 0 0 4px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    opacity: 0.8;
+  }
+
+  &__description {
+    font-size: 13px;
+    color: @text-secondary;
+    margin: 0 0 20px 0;
+    line-height: 1.4;
+  }
+
+  &__list {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+  }
+
+  &__footer {
+    padding: 16px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+}
+
+// Settings Item with Mac Switch
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  &__info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__icon {
+    font-size: 18px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+  }
+
+  &__name {
+    font-size: 14px;
+    font-weight: 500;
+    color: @text-primary;
+  }
+}
+
+// macOS style switch
+.mac-switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 22px;
+  
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  &__slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.2);
+    transition: .3s;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+
+    &:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 1px;
+      bottom: 1px;
+      background-color: white;
+      transition: .3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+  }
+  
+  input:checked + .mac-switch__slider {
+    background-color: @accent-blue;
+    box-shadow: 0 0 10px -2px rgba(14, 164, 230, 0.6);
+  }
+  
+  input:checked + .mac-switch__slider:before {
+    transform: translateX(16px);
+  }
+}
+
+// macOS style buttons
+.mac-btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+
+  &--secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid transparent;
+    color: @text-primary;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    &:active {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(1px);
+    }
+  }
+
+  &--primary {
+    background: @accent-blue;
+    border: 1px solid darken(@accent-blue, 5%);
+    color: white;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+
+    &:hover {
+      background: lighten(@accent-blue, 5%);
+    }
+
+    &:active {
+      background: darken(@accent-blue, 5%);
+      transform: translateY(1px);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
   }
 }
