@@ -30,6 +30,7 @@ const Logo = (
 )
 
 export default class KLineChartPro implements ChartPro {
+  private _disposeFn?: () => void;
   constructor (options: ChartProOptions) {
     if (utils.isString(options.container)) {
       this._container = document.getElementById(options.container as string)
@@ -43,7 +44,7 @@ export default class KLineChartPro implements ChartPro {
     this._container.setAttribute('data-theme', options.theme ?? 'light')
     const dataLoader = new ChartDataLoader(options.datafeed)
 
-    render(
+    this._disposeFn = render(
       () => (
         <ChartProComponent
           ref={(chart: ChartPro) => { this._chartApi = chart }}
@@ -83,11 +84,7 @@ export default class KLineChartPro implements ChartPro {
   private _chartApi: Nullable<ChartPro> = null
 
   destroy() {
-    if (this._container)
-      dispose(this._container!)
-
-    this._container = null
-    this._chartApi = null
+    this.dispose()
   }
 
   setTheme (theme: string): void {
@@ -138,13 +135,18 @@ export default class KLineChartPro implements ChartPro {
   getPeriod (): Period {
     return this._chartApi!.getPeriod()
   }
+
   getInstanceApi(): Nullable<Chart> {
     return widget()
   }
+
   resize(): void {
-    widget()!.resize()
+    widget()?.resize()
   }
+
   dispose(): void {
-    this.destroy()
+    this._disposeFn?.()
+    this._container = null
+    this._chartApi = null
   }
 }
