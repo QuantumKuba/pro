@@ -88,7 +88,7 @@ const SettingModal: Component<SettingModalProps> = props => {
                     <Select
                       style={{ width: '120px' }}
                       value={i18n(value as string, props.locale)}
-                      dataSource={option.dataSource}
+                      dataSource={option.dataSource as SelectDataSourceItem[]}
                       onSelected={(data) => {
                         const newValue = (data as SelectDataSourceItem).key
                         update(option, newValue)

@@ -15,6 +15,7 @@ export default defineConfig({
           if (chunkInfo.name === 'style.css') {
             return 'klinecharts-pro.css'
           }
+          return '[name].[ext]'
         },
         globals: {
           klinecharts: 'klinecharts'
