@@ -1,13 +1,17 @@
 /// <reference types="vite/client" />
 import { render } from 'solid-js/web'
 import { createSignal, Show, onCleanup } from 'solid-js'
-import { KLineChartPro, BinanceDatafeed, CompositeDatafeed, DefaultDatafeed } from '../src/index'
+import { BinanceDatafeed, CompositeDatafeed, DefaultDatafeed } from '../src/index'
+import { LayoutManager, LayoutSelector } from '../src/layout'
+import type { LayoutManagerApi } from '../src/layout'
+import type { LayoutPreset } from '../src/layout/types'
 import { CryptoDashboard } from '../src/dashboard'
 import { type SymbolInfo } from '../src/types'
 import { inject } from '@vercel/analytics'
 
 // Import dashboard styles (includes chart-view styles)
 import '../src/dashboard/dashboard.less'
+import '../src/layout/layout.less'
 
 // Initialize datafeeds
 const polygonDatafeed = new DefaultDatafeed(import.meta.env.VITE_POLYGON || '')
@@ -17,6 +21,22 @@ const datafeed = new CompositeDatafeed({
   stocks: polygonDatafeed,
   crypto: binanceDatafeed
 })
+
+const defaultPeriods = [
+  { span: 1, type: 'minute' as const, text: '1m' },
+  { span: 3, type: 'minute' as const, text: '3m' },
+  { span: 5, type: 'minute' as const, text: '5m' },
+  { span: 15, type: 'minute' as const, text: '15m' },
+  { span: 30, type: 'minute' as const, text: '30m' },
+  { span: 1, type: 'hour' as const, text: '1H' },
+  { span: 2, type: 'hour' as const, text: '2H' },
+  { span: 4, type: 'hour' as const, text: '4H' },
+  { span: 6, type: 'hour' as const, text: '6H' },
+  { span: 12, type: 'hour' as const, text: '12H' },
+  { span: 1, type: 'day' as const, text: '1D' },
+  { span: 1, type: 'week' as const, text: '1W' },
+  { span: 1, type: 'month' as const, text: '1M' },
+]
 
 // View state: 'dashboard' or 'chart'
 type ViewState = 'dashboard' | 'chart'
@@ -31,71 +51,31 @@ function App() {
     view: 'dashboard',
     symbol: null
   })
-  
-  let chartInstance: any = null
-  let chartContainer: HTMLDivElement | undefined
+
+  const [currentPresetId, setCurrentPresetId] = createSignal('single')
+  let layoutApi: LayoutManagerApi | null = null
 
   const handleNavigateToChart = (symbol: SymbolInfo) => {
     setState({ view: 'chart', symbol })
   }
 
   const handleBackToDashboard = () => {
-    // Destroy chart instance if exists
-    if (chartInstance) {
-      chartInstance.destroy()
-      chartInstance = null
-    }
+    layoutApi = null
     setState({ view: 'dashboard', symbol: null })
   }
 
-  // Handle symbol change from within the chart
   const handleSymbolChange = (newSymbol: SymbolInfo) => {
     setState(prev => ({ ...prev, symbol: newSymbol }))
   }
 
-  // Create chart when view changes to 'chart'
-  const initChart = (container: HTMLDivElement) => {
-    chartContainer = container
-    const symbol = state().symbol
-    
-    if (!symbol) return
-
-    chartInstance = new KLineChartPro({
-      container,
-      symbol,
-      period: { span: 15, type: 'minute', text: '15m' },
-      periods: [
-        { span: 1, type: 'minute', text: '1m' },
-        { span: 3, type: 'minute', text: '3m' },
-        { span: 5, type: 'minute', text: '5m' },
-        { span: 15, type: 'minute', text: '15m' },
-        { span: 30, type: 'minute', text: '30m' },
-        { span: 1, type: 'hour', text: '1H' },
-        { span: 2, type: 'hour', text: '2H' },
-        { span: 4, type: 'hour', text: '4H' },
-        { span: 6, type: 'hour', text: '6H' },
-        { span: 12, type: 'hour', text: '12H' },
-        { span: 1, type: 'day', text: '1D' },
-        { span: 1, type: 'week', text: '1W' },
-        { span: 1, type: 'month', text: '1M' },
-      ],
-      mainIndicators: ['MA'],
-      subIndicators: ['VOL'],
-      datafeed,
-      drawingBarVisible: true,
-      theme: 'dark',
-      onSymbolChange: handleSymbolChange,
-    })
-
-    // Expose chart to window for debugging
-    ;(window as any).chart = chartInstance
+  const handleLayoutSelect = (preset: LayoutPreset) => {
+    layoutApi?.switchPreset(preset)
+    setCurrentPresetId(preset.id)
   }
 
-  onCleanup(() => {
-    if (chartInstance) {
-      chartInstance.destroy()
-    }
-  })
+  const handleLayoutRef = (api: LayoutManagerApi) => {
+    layoutApi = api
+  }
 
   return (
     <>
@@ -122,6 +102,10 @@ function App() {
               </div>
             </div>
             <nav class="chart-view__nav">
+              <LayoutSelector
+                currentPresetId={currentPresetId()}
+                onSelect={handleLayoutSelect}
+              />
               <button class="chart-view__nav-btn" onClick={handleBackToDashboard}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
                   <polyline points="15 18 9 12 15 6"></polyline>
@@ -133,11 +117,24 @@ function App() {
               </button>
             </nav>
           </header>
-          <div 
-            id="chart-container" 
-            class="chart-view__chart"
-            ref={initChart}
-          />
+          <div class="chart-view__chart">
+            <Show when={state().symbol}>
+              {(symbol) => (
+                <LayoutManager
+                  ref={handleLayoutRef}
+                  initialSymbol={symbol()}
+                  period={{ span: 15, type: 'minute', text: '15m' }}
+                  periods={defaultPeriods}
+                  datafeed={datafeed}
+                  theme="dark"
+                  locale="en-US"
+                  mainIndicators={['MA']}
+                  subIndicators={['VOL']}
+                  onSymbolChange={handleSymbolChange}
+                />
+              )}
+            </Show>
+          </div>
         </div>
       </Show>
     </>

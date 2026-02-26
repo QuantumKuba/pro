@@ -1,11 +1,17 @@
 import { DataLoaderGetBarsParams, DataLoaderSubscribeBarParams, DataLoaderUnsubscribeBarParams, KLineData } from "klinecharts";
 import { ChartDataLoaderType, Datafeed, Period, SymbolInfo } from "./types";
-import { period, setLoadingVisible, symbol } from "./ChartProComponent";
+import type { Accessor, Setter } from "solid-js";
+import type { Nullable } from "klinecharts";
 
 export default class ChartDataLoader implements ChartDataLoaderType {
   private _datafeed: Datafeed;
   private _loading: boolean;
   private _subscriptionSuspended: boolean;
+
+  // Per-instance signal accessors (injected by parent component)
+  private _symbolGetter: Accessor<Nullable<SymbolInfo>> = () => null;
+  private _periodGetter: Accessor<Nullable<Period>> = () => null;
+  private _loadingVisibleSetter: Setter<boolean> = (() => {}) as Setter<boolean>;
 
   // Replay mode state
   private _replayMode: boolean = false;
@@ -21,6 +27,20 @@ export default class ChartDataLoader implements ChartDataLoaderType {
     this._datafeed = datafeed;
     this._loading = false;
     this._subscriptionSuspended = false;
+  }
+
+  /**
+   * Bind per-instance signal accessors from the parent component.
+   * This must be called before the chart starts loading data.
+   */
+  bindSignals(
+    symbolGetter: Accessor<Nullable<SymbolInfo>>,
+    periodGetter: Accessor<Nullable<Period>>,
+    loadingVisibleSetter: Setter<boolean>
+  ): void {
+    this._symbolGetter = symbolGetter;
+    this._periodGetter = periodGetter;
+    this._loadingVisibleSetter = loadingVisibleSetter;
   }
 
   private _fetchLimit: number = 500;
@@ -55,8 +75,8 @@ export default class ChartDataLoader implements ChartDataLoaderType {
         // User scrolled left - try to load more historical data before current replay data
         const oldestTimestamp = this._replayData[0]?.timestamp;
         if (oldestTimestamp) {
-          const p = period();
-          const s = symbol();
+          const p = this._periodGetter();
+          const s = this._symbolGetter();
           if (p && s) {
             // Calculate 'to' as one period BEFORE the oldest candle to avoid duplicates
             // We use adjustFromTo to get properly aligned timestamps
@@ -135,17 +155,17 @@ export default class ChartDataLoader implements ChartDataLoaderType {
       return;
     }
     this._loading = true
-    setLoadingVisible(true)
+    this._loadingVisibleSetter(true)
     const timestamp = _t ?? new Date().getTime()
     const get = async () => {
-      const p = period()!
-      const s = symbol()!
+      const p = this._periodGetter()!
+      const s = this._symbolGetter()!
       const [to] = this.adjustFromTo(p, timestamp!, 1)
       const [from] = this.adjustFromTo(p, to, this._fetchLimit)
       const kLineDataList = await this._datafeed.getHistoryKLineData(s, p, from, to)
       callback(kLineDataList, kLineDataList.length > 0)
       this._loading = false
-      setLoadingVisible(false)
+      this._loadingVisibleSetter(false)
     }
     await get();
   }
@@ -157,13 +177,13 @@ export default class ChartDataLoader implements ChartDataLoaderType {
       return
     }
     const { symbol: _s, period: _p, callback } = params;
-    this._datafeed.subscribe(symbol()!, period()!, callback)
+    this._datafeed.subscribe(this._symbolGetter()!, this._periodGetter()!, callback)
   }
 
   unsubscribeBar(params: DataLoaderUnsubscribeBarParams): void {
     console.info('ChartDataLoader unsubscribeBar', params);
     const { symbol: _s, period: _p } = params;
-    this._datafeed.unsubscribe(symbol()!, period()!)
+    this._datafeed.unsubscribe(this._symbolGetter()!, this._periodGetter()!)
   }
 
   /**
@@ -173,7 +193,7 @@ export default class ChartDataLoader implements ChartDataLoaderType {
     console.info('ChartDataLoader suspendSubscription')
     this._subscriptionSuspended = true
     // Unsubscribe from current feed
-    this._datafeed.unsubscribe(symbol()!, period()!)
+    this._datafeed.unsubscribe(this._symbolGetter()!, this._periodGetter()!)
   }
 
   /**
