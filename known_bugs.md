@@ -17,4 +17,5 @@
 
 #### UI
 
-- [ ] Make the timeframe selection menu, including the indicator, Timezone, Setting, Replay, and Screenshot buttons responsive. We should collapse them into something like a burger menu, get rid of the text and leave icons only or use any other appropriate approach that you as a senior developer and UI/UX designer deems best.
+- [x] Make the timeframe selection menu, including the indicator, Timezone, Setting, Replay, and Screenshot buttons responsive. We should collapse them into something like a burger menu, get rid of the text and leave icons only or use any other appropriate approach that you as a senior developer and UI/UX designer deems best.
+- [x] Drawing bar vertical overflow: when the chart pane is resized vertically (Y-axis shrunk), items that don't fit are dynamically collected into a "⋮" overflow dropdown with bubble-pop animation. **Implemented:** ResizeObserver-based height tracking in `DrawingBar`, conditional rendering with `<Show>`, overflow dropdown with `kc-pop` animation.
