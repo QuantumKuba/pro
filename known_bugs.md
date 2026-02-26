@@ -17,4 +17,4 @@
 
 #### UI
 
-- [ ] Make the timeframe selection menu, including the indicator, Timezone, Setting, Replay, Screenshot and Fullscreen buttons responsive. We should collapse them into something like a burger menu, get rid of the text and leave icons only or use any other appropriate approach that you as a senior developer and UI/UX designer deems best.
+- [ ] Make the timeframe selection menu, including the indicator, Timezone, Setting, Replay, and Screenshot buttons responsive. We should collapse them into something like a burger menu, get rid of the text and leave icons only or use any other appropriate approach that you as a senior developer and UI/UX designer deems best.

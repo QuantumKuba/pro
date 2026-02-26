@@ -42,22 +42,12 @@ const NARROW_VISIBLE_COUNT = 4
 const PeriodBar: Component<PeriodBarProps> = props => {
   let ref: HTMLDivElement | undefined
 
-  const [fullScreen, setFullScreen] = createSignal(false)
   const [isNarrow, setIsNarrow] = createSignal(false)
   const [isUltraCompact, setIsUltraCompact] = createSignal(false)
   const [moreOpen, setMoreOpen] = createSignal(false)
   const [toolsOpen, setToolsOpen] = createSignal(false)
 
-  const fullScreenChange = () => {
-    setFullScreen(full => !full)
-  }
-
   onMount(() => {
-    document.addEventListener('fullscreenchange', fullScreenChange)
-    document.addEventListener('mozfullscreenchange', fullScreenChange)
-    document.addEventListener('webkitfullscreenchange', fullScreenChange)
-    document.addEventListener('msfullscreenchange', fullScreenChange)
-
     // ResizeObserver to track bar width and toggle responsive CSS classes
     // Uses element width (not viewport) so it works in multi-pane layouts
     if (ref && typeof ResizeObserver !== 'undefined') {
@@ -91,13 +81,6 @@ const PeriodBar: Component<PeriodBarProps> = props => {
     }
     document.addEventListener('click', closeMore)
     onCleanup(() => document.removeEventListener('click', closeMore))
-  })
-
-  onCleanup(() => {
-    document.removeEventListener('fullscreenchange', fullScreenChange)
-    document.removeEventListener('mozfullscreenchange', fullScreenChange)
-    document.removeEventListener('webkitfullscreenchange', fullScreenChange)
-    document.removeEventListener('msfullscreenchange', fullScreenChange)
   })
 
   // Split periods into visible and overflow at narrow breakpoint
@@ -231,44 +214,6 @@ const PeriodBar: Component<PeriodBarProps> = props => {
         </svg>
         <span>{i18n('screenshot', props.locale)}</span>
       </div>
-      <div
-        class='item tools'
-        data-tooltip={fullScreen() ? i18n('exit_full_screen', props.locale) : i18n('full_screen', props.locale)}
-        onClick={() => {
-          if (!fullScreen()) {
-            const el = ref?.parentElement
-            if (el) {
-              // @ts-expect-error
-              const enterFullScreen = el.requestFullscreen ?? el.webkitRequestFullscreen ?? el.mozRequestFullScreen ?? el.msRequestFullscreen
-              enterFullScreen.call(el)
-              // setFullScreen(true)
-            }
-          } else {
-            // @ts-expect-error
-            const exitFullscreen = document.exitFullscreen ?? document.msExitFullscreen ?? document.mozCancelFullScreen ?? document.webkitExitFullscreen
-            exitFullscreen.call(document)
-            // setFullScreen(false)
-          }
-        }}>
-        {
-          fullScreen() ? (
-            <>
-              <svg viewBox="0 0 20 20">
-                <path d="M1.08108,0L0,1.079L4.18919,5.27938L2.54826,6.91715L6.9112,6.91715L6.9112,2.56262L5.28957,4.18112L1.08108,0ZM15.8108,5.27938L20,1.079L18.9189,0L14.7104,4.18112L13.0888,2.56262L13.0888,6.91715L17.4517,6.91715L15.8108,5.27938ZM4.16988,14.7014L0.07722,18.8054L1.1583,20L5.27027,15.7996L6.9112,17.4374L6.9112,13.0829L2.54826,13.0829L4.16988,14.7014ZM17.4517,13.0829L13.0888,13.0829L13.0888,17.4374L14.7297,15.7996L18.8417,20L19.9228,18.8054L15.8301,14.7013L17.4517,13.0829Z" />
-              </svg>
-              <span>{i18n('exit_full_screen', props.locale)}</span>
-            </>
-
-          ) : (
-            <>
-              <svg viewBox="0 0 20 20">
-                <path d="M2.93444,1.76899L7.57544,6.40999L6.38918,7.59626L1.76899,2.93444L0,4.70343L0,0L4.70343,0L2.93444,1.76899ZM6.40999,12.4037L1.76899,17.0447L0,15.2758L0,19.9792L4.70343,19.9792L2.93444,18.2102L7.57544,13.5692L6.40999,12.4037ZM15.2758,0L17.0447,1.76899L12.4037,6.40999L13.59,7.59626L18.231,2.95526L20,4.72425L20,0L15.2758,0ZM13.5692,12.4037L12.3829,13.59L17.0239,18.231L15.2549,20L19.9792,20L19.9792,15.2758L18.2102,17.0447L13.5692,12.4037Z" />
-              </svg>
-              <span>{i18n('full_screen', props.locale)}</span>
-            </>
-          )
-        }
-      </div>
       <div class="tools-overflow">
         <div
           class="tools-overflow-btn"
@@ -313,26 +258,6 @@ const PeriodBar: Component<PeriodBarProps> = props => {
               onClick={() => { props.onScreenshotClick(); setToolsOpen(false) }}>
               <svg viewBox="0 0 20 20"><path d="M6.50977,1L13.4902,1C13.6406,1,13.7695,1.11,13.7969,1.26L14.0273,2.52C14.1387,3.13,14.6543,3.57,15.2559,3.57L17.5,3.57C18.8809,3.57,20,4.72,20,6.14L20,16.43C20,17.85,18.8809,19,17.5,19L2.5,19C1.11914,19,0,17.85,0,16.43L0,6.14C0,4.72,1.11914,3.57,2.5,3.57L4.74414,3.57C5.3457,3.57,5.86133,3.13,5.97266,2.52L6.20312,1.26C6.23047,1.11,6.35937,1,6.50977,1ZM10,6.14C7.06641,6.14,4.6875,8.59,4.6875,11.61C4.6875,14.62,7.06641,17.07,10,17.07C12.9336,17.07,15.3125,14.62,15.3125,11.61C15.3125,8.59,12.9336,6.14,10,6.14ZM10,7.43C12.0711,7.43,13.75,9.31,13.75,11.61C13.75,13.91,12.0711,15.79,10,15.79C7.92893,15.79,6.25,13.91,6.25,11.61C6.25,9.31,7.92893,7.43,10,7.43Z" /></svg>
               <span>{i18n('screenshot', props.locale)}</span>
-            </div>
-            <div
-              class="tools-overflow-item"
-              onClick={() => {
-                if (!fullScreen()) {
-                  const el = ref?.parentElement
-                  if (el) {
-                    // @ts-expect-error
-                    const enterFullScreen = el.requestFullscreen ?? el.webkitRequestFullscreen ?? el.mozRequestFullScreen ?? el.msRequestFullscreen
-                    enterFullScreen.call(el)
-                  }
-                } else {
-                  // @ts-expect-error
-                  const exitFullscreen = document.exitFullscreen ?? document.msExitFullscreen ?? document.mozCancelFullScreen ?? document.webkitExitFullscreen
-                  exitFullscreen.call(document)
-                }
-                setToolsOpen(false)
-              }}>
-              <svg viewBox="0 0 20 20"><path d="M2.93444,1.76899L7.57544,6.40999L6.38918,7.59626L1.76899,2.93444L0,4.70343L0,0L4.70343,0L2.93444,1.76899ZM6.40999,12.4037L1.76899,17.0447L0,15.2758L0,19.9792L4.70343,19.9792L2.93444,18.2102L7.57544,13.5692L6.40999,12.4037ZM15.2758,0L17.0447,1.76899L12.4037,6.40999L13.59,7.59626L18.231,2.95526L20,4.72425L20,0L15.2758,0ZM13.5692,12.4037L12.3829,13.59L17.0239,18.231L15.2549,20L19.9792,20L19.9792,15.2758L18.2102,17.0447L13.5692,12.4037Z" /></svg>
-              <span>{fullScreen() ? i18n('exit_full_screen', props.locale) : i18n('full_screen', props.locale)}</span>
             </div>
           </div>
         </Show>
