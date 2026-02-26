@@ -22,11 +22,14 @@ import BinanceDatafeed from './BinanceDatafeed'
 import CompositeDatafeed from './CompositeDatafeed'
 import KLineChartPro from './KLineChartPro'
 
+import { LayoutManager, LayoutSelector } from './layout'
+
 import { load } from './i18n'
 
 import { Datafeed, SymbolInfo, Period, DatafeedSubscribeCallback, ChartProOptions, ChartPro } from './types'
 
 import './index.less'
+import './layout/layout.less'
 
 overlays.forEach(o => { registerOverlay(o) })
 indicators.forEach(i => { registerIndicator(i) })
@@ -36,9 +39,14 @@ export {
   BinanceDatafeed,
   CompositeDatafeed,
   KLineChartPro,
+  LayoutManager,
+  LayoutSelector,
   load as loadLocales
 }
 
 export type {
   Datafeed, SymbolInfo, Period, DatafeedSubscribeCallback, ChartProOptions, ChartPro
 }
+
+export type { LayoutManagerApi, LayoutManagerProps } from './layout'
+export type { LayoutNode, LayoutState, PaneConfig, LayoutPreset, SplitDirection } from './layout'

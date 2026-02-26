@@ -218,14 +218,25 @@ function getStrategy(period: Period): IntervalStrategy {
   return { interval: '1m', multiplier: 1, baseSpan: 1, baseType: 'minute' }
 }
 
-export default class BinanceDatafeed implements Datafeed {
-  private _ws: WebSocket | null = null
-  private _currentSymbol: string | null = null
-  private _currentStrategy: IntervalStrategy | null = null
+/** Per-subscription state: each symbol+interval pair gets its own WebSocket and aggregation state */
+interface SubscriptionEntry {
+  ws: WebSocket
+  symbol: string
+  strategy: IntervalStrategy
+  baseCandles: Map<number, KLineData>
+  callback: DatafeedSubscribeCallback
+}
 
-  // Store the base candles for the current aggregated period
-  // Key: timestamp of the base candle
-  private _currentBaseCandles: Map<number, KLineData> = new Map()
+export default class BinanceDatafeed implements Datafeed {
+  /**
+   * Map of active subscriptions, keyed by "SYMBOL_interval" (e.g. "BTCUSDT_1m").
+   * Each entry manages its own WebSocket so multiple panes can stream independently.
+   */
+  private _subscriptions: Map<string, SubscriptionEntry> = new Map()
+
+  private static _subKey(symbol: string, interval: string, subscriberId?: string): string {
+    return subscriberId ? `${symbol}_${interval}_${subscriberId}` : `${symbol}_${interval}`
+  }
 
   async searchSymbols(search?: string): Promise<SymbolInfo[]> {
     const allSymbols = await fetchAllSymbols()
@@ -304,19 +315,10 @@ export default class BinanceDatafeed implements Datafeed {
       let currentAgg: KLineData | null = null
       let currentBaseCandles: KLineData[] = []
 
-      const aggDuration = strategy.multiplier * strategy.baseSpan * unitMs
+      const aggDurationCalc = strategy.multiplier * strategy.baseSpan * unitMs
 
       baseKlines.forEach(k => {
-        // Determine start time of the aggregated candle this base candle belongs to
-        // Assuming alignment to 0
-        // For months/weeks this simple math might be slightly off due to calendar, but for minutes/hours it's fine.
-        // For Binance, candles are usually aligned.
-        // We can use the timestamp of the base candle to determine the bucket.
-
-        // However, simply taking floor might not work if the start time is not 0-aligned (e.g. weekly starts on Monday).
-        // But let's assume standard alignment.
-
-        const aggTimestamp = Math.floor(k.timestamp / aggDuration) * aggDuration
+        const aggTimestamp = Math.floor(k.timestamp / aggDurationCalc) * aggDurationCalc
 
         if (currentAgg && currentAgg.timestamp !== aggTimestamp) {
           result.push(currentAgg)
@@ -347,9 +349,14 @@ export default class BinanceDatafeed implements Datafeed {
 
       if (currentAgg) {
         result.push(currentAgg)
-        // Store the base candles of the last aggregated candle for subscription use
-        this._currentBaseCandles.clear()
-        currentBaseCandles.forEach(k => this._currentBaseCandles.set(k.timestamp, k))
+        // Store the base candles of the last aggregated candle for subscription use.
+        // Use the subscription key so each pane gets its own aggregation state.
+        const subKey = BinanceDatafeed._subKey(symbol.ticker, strategy.interval)
+        const existing = this._subscriptions.get(subKey)
+        if (existing) {
+          existing.baseCandles.clear()
+          currentBaseCandles.forEach(k => existing.baseCandles.set(k.timestamp, k))
+        }
       }
 
       return result
@@ -363,117 +370,124 @@ export default class BinanceDatafeed implements Datafeed {
   subscribe(
     symbol: SymbolInfo,
     period: Period,
-    callback: DatafeedSubscribeCallback
+    callback: DatafeedSubscribeCallback,
+    subscriberId?: string
   ): void {
     const strategy = getStrategy(period)
+    const subKey = BinanceDatafeed._subKey(symbol.ticker, strategy.interval, subscriberId)
     const streamName = `${symbol.ticker.toLowerCase()}@kline_${strategy.interval}`
 
-    // Close existing connection if symbol/interval changed
-    if (this._ws && (this._currentSymbol !== symbol.ticker || this._currentStrategy?.interval !== strategy.interval)) {
-      this._ws.close()
-      this._ws = null
+    // If there's already a subscription for this exact symbol+interval, close it first
+    // (e.g. same pane re-subscribing after a timeframe change)
+    const existing = this._subscriptions.get(subKey)
+    if (existing) {
+      existing.ws.close()
+      this._subscriptions.delete(subKey)
     }
 
-    if (!this._ws) {
-      this._ws = new WebSocket(`${BINANCE_WS}/${streamName}`)
-      this._currentSymbol = symbol.ticker
-      this._currentStrategy = strategy
+    const baseCandles: Map<number, KLineData> = new Map()
+    const ws = new WebSocket(`${BINANCE_WS}/${streamName}`)
 
-      this._ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          if (data.e === 'kline') {
-            const k = data.k
-            const baseCandle: KLineData = {
-              timestamp: k.t,
-              open: parseFloat(k.o),
-              high: parseFloat(k.h),
-              low: parseFloat(k.l),
-              close: parseFloat(k.c),
-              volume: parseFloat(k.v),
-              turnover: parseFloat(k.q),
-            }
+    const entry: SubscriptionEntry = {
+      ws,
+      symbol: symbol.ticker,
+      strategy,
+      baseCandles,
+      callback
+    }
+    this._subscriptions.set(subKey, entry)
 
-            if (strategy.multiplier === 1) {
-              callback(baseCandle)
-              return
-            }
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        if (data.e === 'kline') {
+          const k = data.k
+          const baseCandle: KLineData = {
+            timestamp: k.t,
+            open: parseFloat(k.o),
+            high: parseFloat(k.h),
+            low: parseFloat(k.l),
+            close: parseFloat(k.c),
+            volume: parseFloat(k.v),
+            turnover: parseFloat(k.q),
+          }
 
-            // Aggregation logic
-            let unitMs = 60 * 1000
-            if (strategy.baseType === 'second') unitMs = 1000
-            if (strategy.baseType === 'hour') unitMs = 60 * 60 * 1000
-            if (strategy.baseType === 'day') unitMs = 24 * 60 * 60 * 1000
-            if (strategy.baseType === 'week') unitMs = 7 * 24 * 60 * 60 * 1000
-            if (strategy.baseType === 'month') unitMs = 30 * 24 * 60 * 60 * 1000
+          if (strategy.multiplier === 1) {
+            callback(baseCandle)
+            return
+          }
 
-            const aggDuration = strategy.multiplier * strategy.baseSpan * unitMs
-            const aggTimestamp = Math.floor(baseCandle.timestamp / aggDuration) * aggDuration
+          // Aggregation logic
+          let unitMs = 60 * 1000
+          if (strategy.baseType === 'second') unitMs = 1000
+          if (strategy.baseType === 'hour') unitMs = 60 * 60 * 1000
+          if (strategy.baseType === 'day') unitMs = 24 * 60 * 60 * 1000
+          if (strategy.baseType === 'week') unitMs = 7 * 24 * 60 * 60 * 1000
+          if (strategy.baseType === 'month') unitMs = 30 * 24 * 60 * 60 * 1000
 
-            // Update current base candles map
-            // If this base candle belongs to a new aggregated period, clear old ones
-            // Check the timestamp of the first candle in the map
-            const firstBaseTimestamp = this._currentBaseCandles.keys().next().value
-            if (firstBaseTimestamp !== undefined) {
-              const firstAggTimestamp = Math.floor(firstBaseTimestamp / aggDuration) * aggDuration
-              if (firstAggTimestamp !== aggTimestamp) {
-                this._currentBaseCandles.clear()
-              }
-            }
+          const aggDuration = strategy.multiplier * strategy.baseSpan * unitMs
+          const aggTimestamp = Math.floor(baseCandle.timestamp / aggDuration) * aggDuration
 
-            this._currentBaseCandles.set(baseCandle.timestamp, baseCandle)
-
-            // Re-aggregate
-            let aggCandle: KLineData | null = null
-            // Sort by timestamp to ensure correct Open/Close
-            const sortedBase = Array.from(this._currentBaseCandles.values()).sort((a, b) => a.timestamp - b.timestamp)
-
-            sortedBase.forEach(k => {
-              if (!aggCandle) {
-                aggCandle = {
-                  timestamp: aggTimestamp,
-                  open: k.open,
-                  high: k.high,
-                  low: k.low,
-                  close: k.close,
-                  volume: k.volume,
-                  turnover: k.turnover
-                }
-              } else {
-                aggCandle.high = Math.max(aggCandle.high, k.high)
-                aggCandle.low = Math.min(aggCandle.low, k.low)
-                aggCandle.close = k.close
-                aggCandle.volume = (aggCandle.volume ?? 0) + (k.volume ?? 0)
-                aggCandle.turnover = (aggCandle.turnover ?? 0) + (k.turnover ?? 0)
-              }
-            })
-
-            if (aggCandle) {
-              callback(aggCandle)
+          // If this base candle belongs to a new aggregated period, clear old ones
+          const firstBaseTimestamp = entry.baseCandles.keys().next().value
+          if (firstBaseTimestamp !== undefined) {
+            const firstAggTimestamp = Math.floor(firstBaseTimestamp / aggDuration) * aggDuration
+            if (firstAggTimestamp !== aggTimestamp) {
+              entry.baseCandles.clear()
             }
           }
-        } catch (error) {
-          console.error('WebSocket message error:', error)
+
+          entry.baseCandles.set(baseCandle.timestamp, baseCandle)
+
+          // Re-aggregate
+          let aggCandle: KLineData | null = null
+          const sortedBase = Array.from(entry.baseCandles.values()).sort((a, b) => a.timestamp - b.timestamp)
+
+          sortedBase.forEach(k => {
+            if (!aggCandle) {
+              aggCandle = {
+                timestamp: aggTimestamp,
+                open: k.open,
+                high: k.high,
+                low: k.low,
+                close: k.close,
+                volume: k.volume,
+                turnover: k.turnover
+              }
+            } else {
+              aggCandle.high = Math.max(aggCandle.high, k.high)
+              aggCandle.low = Math.min(aggCandle.low, k.low)
+              aggCandle.close = k.close
+              aggCandle.volume = (aggCandle.volume ?? 0) + (k.volume ?? 0)
+              aggCandle.turnover = (aggCandle.turnover ?? 0) + (k.turnover ?? 0)
+            }
+          })
+
+          if (aggCandle) {
+            callback(aggCandle)
+          }
         }
+      } catch (error) {
+        console.error('WebSocket message error:', error)
       }
+    }
 
-      this._ws.onerror = (error) => {
-        console.error('WebSocket error:', error)
-      }
+    ws.onerror = (error) => {
+      console.error(`WebSocket error for ${subKey}:`, error)
+    }
 
-      this._ws.onclose = () => {
-        console.log('WebSocket closed')
-      }
+    ws.onclose = () => {
+      console.log(`WebSocket closed for ${subKey}`)
     }
   }
 
-  unsubscribe(symbol: SymbolInfo, period: Period): void {
-    if (this._ws) {
-      this._ws.close()
-      this._ws = null
-      this._currentSymbol = null
-      this._currentStrategy = null
-      this._currentBaseCandles.clear()
+  unsubscribe(symbol: SymbolInfo, period: Period, subscriberId?: string): void {
+    const strategy = getStrategy(period)
+    const subKey = BinanceDatafeed._subKey(symbol.ticker, strategy.interval, subscriberId)
+    const entry = this._subscriptions.get(subKey)
+    if (entry) {
+      entry.ws.close()
+      this._subscriptions.delete(subKey)
     }
   }
 }
