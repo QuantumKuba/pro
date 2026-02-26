@@ -120,11 +120,18 @@
   }
 
   .period {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 5px 12px;
     margin: 0 2px;
     border-radius: 8px;
     font-size: 13px;
     font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    min-width: 0;
+    flex-shrink: 0;
 
     &:hover {
       background-color: var(--klinecharts-pro-hover-background-color);
@@ -197,5 +204,302 @@
 
   .period+.tools {
     margin-left: 12px;
+  }
+
+  // --- Overflow "more" button & dropdown ---
+  .more-periods {
+    position: relative;
+    display: none; // shown only at narrow breakpoint via media query
+
+    .more-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 28px;
+      width: 28px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      color: var(--klinecharts-pro-text-second-color);
+      transition:
+        background-color @motion-fast @motion-ease,
+        color @motion-fast @motion-ease,
+        transform @motion-fast @motion-ease;
+
+      &:hover {
+        background-color: var(--klinecharts-pro-hover-background-color);
+        color: var(--klinecharts-pro-text-color);
+      }
+
+      &:active {
+        transform: scale(0.94);
+      }
+    }
+
+    .more-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 120px;
+      padding: 6px;
+      border-radius: 10px;
+      background-color: var(--klinecharts-pro-popover-background-color);
+      .glass-surface();
+      border: 1px solid var(--klinecharts-pro-border-color);
+      box-shadow: var(--klinecharts-pro-shadow);
+      z-index: 100;
+      animation: kc-pop @motion-medium @motion-ease both;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      .more-dropdown-item {
+        padding: 6px 14px;
+        border-radius: 7px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        color: var(--klinecharts-pro-text-second-color);
+        transition:
+          background-color @motion-fast @motion-ease,
+          color @motion-fast @motion-ease;
+
+        &:hover {
+          background-color: var(--klinecharts-pro-hover-background-color);
+          color: var(--klinecharts-pro-text-color);
+        }
+
+        &.selected {
+          background: linear-gradient(135deg,
+              rgba(0, 113, 227, 0.1) 0%,
+              rgba(0, 113, 227, 0.06) 100%);
+          color: var(--klinecharts-pro-primary-color);
+          font-weight: 600;
+        }
+      }
+    }
+  }
+
+  // --- Tooltip for icon-only mode ---
+  .tools[data-tooltip] {
+    position: relative;
+
+    &::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%) scale(0.92);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      white-space: nowrap;
+      color: var(--klinecharts-pro-text-color);
+      background-color: var(--klinecharts-pro-popover-background-color);
+      .glass-surface();
+      border: 1px solid var(--klinecharts-pro-border-color);
+      box-shadow: var(--klinecharts-pro-shadow);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition:
+        opacity @motion-fast @motion-ease,
+        transform @motion-fast @motion-ease;
+    }
+
+    &:hover::after {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+  }
+
+  // Hide tooltips at wide breakpoint (text labels are visible)
+  .tools[data-tooltip]::after {
+    display: none;
+  }
+
+  // --- Tools overflow button (hidden by default, shown at compact-all) ---
+  .tools-overflow {
+    display: none;
+    position: relative;
+
+    .tools-overflow-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 32px;
+      width: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      fill: var(--klinecharts-pro-text-second-color);
+      transition:
+        background-color @motion-fast @motion-ease,
+        fill @motion-fast @motion-ease,
+        transform @motion-fast @motion-ease;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      &:hover {
+        background-color: var(--klinecharts-pro-hover-background-color);
+        fill: var(--klinecharts-pro-text-color);
+      }
+
+      &:active {
+        transform: scale(0.94);
+      }
+    }
+
+    .tools-overflow-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 160px;
+      padding: 6px;
+      border-radius: 10px;
+      background-color: var(--klinecharts-pro-popover-background-color);
+      .glass-surface();
+      border: 1px solid var(--klinecharts-pro-border-color);
+      box-shadow: var(--klinecharts-pro-shadow);
+      z-index: 100;
+      animation: kc-pop @motion-medium @motion-ease both;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      .tools-overflow-item {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 7px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        color: var(--klinecharts-pro-text-second-color);
+        fill: var(--klinecharts-pro-text-second-color);
+        transition:
+          background-color @motion-fast @motion-ease,
+          color @motion-fast @motion-ease,
+          fill @motion-fast @motion-ease;
+
+        svg {
+          width: 16px;
+          height: 16px;
+          margin-right: 10px;
+          flex-shrink: 0;
+        }
+
+        &:hover {
+          background-color: var(--klinecharts-pro-hover-background-color);
+          color: var(--klinecharts-pro-text-color);
+          fill: var(--klinecharts-pro-text-color);
+        }
+
+        &.active {
+          background: linear-gradient(135deg,
+              rgba(0, 113, 227, 0.1) 0%,
+              rgba(0, 113, 227, 0.06) 100%);
+          color: var(--klinecharts-pro-primary-color);
+          fill: var(--klinecharts-pro-primary-color);
+          font-weight: 600;
+        }
+      }
+    }
+  }
+
+  // ============================================
+  // ELEMENT-WIDTH RESPONSIVE (class-based)
+  // Driven by ResizeObserver, works in multi-pane
+  // ============================================
+
+  // --- Compact tools: Icon-only (< 1100px element width) ---
+  &.compact-tools {
+    .tools {
+      padding: 0 8px;
+      flex-shrink: 0;
+
+      span {
+        display: none;
+      }
+
+      svg {
+        margin-right: 0;
+      }
+    }
+
+    // Enable tooltips when text is hidden
+    .tools[data-tooltip]::after {
+      display: block;
+    }
+
+    .period+.tools {
+      margin-left: 8px;
+    }
+  }
+
+  // --- Compact periods: Overflow (< 768px element width) ---
+  &.compact-periods {
+    .period.overflow-hidden {
+      display: none;
+    }
+
+    .more-periods {
+      display: flex;
+      align-items: center;
+      margin: 0 2px;
+    }
+
+    .symbol {
+      padding: 0 8px;
+
+      span {
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  // --- Compact all: Tools into overflow dropdown (< 480px element width) ---
+  &.compact-all {
+    .tools {
+      display: none !important;
+    }
+
+    .tools-overflow {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    // Also compact the symbol further
+    .symbol {
+      padding: 0 4px;
+      margin-left: 2px;
+
+      span {
+        max-width: 60px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      img {
+        width: 16px;
+        height: 16px;
+        margin-right: 4px;
+      }
+    }
   }
 }
