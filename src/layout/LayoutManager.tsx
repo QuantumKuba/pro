@@ -160,16 +160,6 @@ const LayoutManager: Component<LayoutManagerProps> = (props) => {
     setTree(newTree)
   }
 
-  /** Reset ratios to equal for a split node at a path */
-  const resetRatios = (path: number[]) => {
-    setTree(prev => resetTreeRatios(prev, path))
-  }
-
-  /** Update ratios between two adjacent children of a split node */
-  const updateRatiosBetween = (path: number[], childIndex: number, delta: number, containerSize: number) => {
-    setTree(prev => updateSplitRatios(prev, path, childIndex, delta, containerSize))
-  }
-
   /**
    * Recursively render the layout tree.
    *
@@ -259,16 +249,49 @@ const LayoutManager: Component<LayoutManagerProps> = (props) => {
               seg1.style[sizeProp] = `${(newR1 * 100).toFixed(4)}%`
               seg2.style[sizeProp] = `${(newR2 * 100).toFixed(4)}%`
 
-              // Trigger chart resize inside each segment (debounced by ResizeObserver in ChartPane)
+              // Notify charts to resize (ResizeObserver may batch/delay during rapid drags)
+              window.dispatchEvent(new Event('resize'))
             }}
             onDragEnd={(totalDelta) => {
-              // Commit final ratios to the tree signal
+              // Persist final ratios by mutating the node IN-PLACE.
+              // This does NOT call setTree() so it won't trigger SolidJS reactivity,
+              // which would destroy and recreate all ChartPane components.
               if (!splitContainerRef) return
               const containerRect = splitContainerRef.getBoundingClientRect()
               const containerSize = isHorizontal ? containerRect.width : containerRect.height
-              updateRatiosBetween(path, index, totalDelta, containerSize)
+              const deltaRatio = totalDelta / containerSize
+
+              let newR1 = (node.ratios[index] ?? (1 / node.children.length)) + deltaRatio
+              let newR2 = (node.ratios[index + 1] ?? (1 / node.children.length)) - deltaRatio
+              if (newR1 < MIN_PANE_RATIO) { newR1 = MIN_PANE_RATIO; newR2 = (node.ratios[index] ?? (1 / node.children.length)) + (node.ratios[index + 1] ?? (1 / node.children.length)) - MIN_PANE_RATIO }
+              if (newR2 < MIN_PANE_RATIO) { newR2 = MIN_PANE_RATIO; newR1 = (node.ratios[index] ?? (1 / node.children.length)) + (node.ratios[index + 1] ?? (1 / node.children.length)) - MIN_PANE_RATIO }
+
+              // Mutate in-place — persists for future tree operations (e.g. preset switch, pane close)
+              node.ratios[index] = newR1
+              node.ratios[index + 1] = newR2
+
+              // Final resize notification
+              window.dispatchEvent(new Event('resize'))
             }}
-            onDoubleClick={() => resetRatios(path)}
+            onDoubleClick={() => {
+              // Reset ratios by mutating in-place + updating DOM directly
+              const equalRatio = 1 / node.children.length
+              for (let i = 0; i < node.ratios.length; i++) {
+                node.ratios[i] = equalRatio
+              }
+              // Update DOM to reflect equal ratios
+              if (splitContainerRef) {
+                const segments = splitContainerRef.querySelectorAll<HTMLElement>(
+                  ':scope > .layout-split__segment'
+                )
+                const sizeProp = isHorizontal ? 'width' : 'height'
+                segments.forEach(seg => {
+                  seg.style[sizeProp] = `${(equalRatio * 100).toFixed(4)}%`
+                })
+              }
+              // Notify charts to resize
+              window.dispatchEvent(new Event('resize'))
+            }}
           />
         )
       }
@@ -333,50 +356,6 @@ function removePaneFromTree (node: LayoutNode, paneId: string): LayoutNode | nul
   return { type: 'split', direction: node.direction, children: newChildren, ratios: normalizedRatios }
 }
 
-function resetTreeRatios (node: LayoutNode, path: number[]): LayoutNode {
-  if (path.length === 0 && node.type === 'split') {
-    const equalRatio = 1 / node.children.length
-    return { ...node, ratios: node.children.map(() => equalRatio) }
-  }
-  if (node.type === 'leaf') return node
-
-  const [head, ...rest] = path
-  const newChildren = [...node.children]
-  newChildren[head] = resetTreeRatios(newChildren[head], rest)
-  return { ...node, children: newChildren }
-}
-
-function updateSplitRatios (
-  node: LayoutNode,
-  path: number[],
-  childIndex: number,
-  delta: number,
-  containerSize: number
-): LayoutNode {
-  if (node.type === 'leaf') return node
-
-  if (path.length === 0) {
-    const ratios = [...node.ratios]
-    const deltaRatio = delta / containerSize
-
-    const newFirst = ratios[childIndex] + deltaRatio
-    const newSecond = ratios[childIndex + 1] - deltaRatio
-
-    if (newFirst < MIN_PANE_RATIO || newSecond < MIN_PANE_RATIO) {
-      return node
-    }
-
-    ratios[childIndex] = newFirst
-    ratios[childIndex + 1] = newSecond
-
-    return { ...node, ratios }
-  }
-
-  const [head, ...rest] = path
-  const newChildren = [...node.children]
-  newChildren[head] = updateSplitRatios(newChildren[head], rest, childIndex, delta, containerSize)
-  return { ...node, children: newChildren }
-}
 
 export { LayoutManager }
 export default LayoutManager
