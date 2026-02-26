@@ -31,59 +31,65 @@ function PresetIcon (props: { presetId: string }) {
   const sw = 1.5
   const r = 2
 
-  switch (props.presetId) {
-    case 'single':
-      return (
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <rect x="2" y="2" width="24" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-        </svg>
-      )
-    case '2-cols':
-      return (
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <rect x="2" y="2" width="11" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-          <rect x="15" y="2" width="11" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-        </svg>
-      )
-    case '2-rows':
-      return (
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <rect x="2" y="2" width="24" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-          <rect x="2" y="15" width="24" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-        </svg>
-      )
-    case '2x2':
-      return (
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <rect x="2" y="2" width="11" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-          <rect x="15" y="2" width="11" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-          <rect x="2" y="15" width="11" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-          <rect x="15" y="15" width="11" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-        </svg>
-      )
-    case 'leader':
-      return (
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <rect x="2" y="2" width="15" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-          <rect x="19" y="2" width="7" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-          <rect x="19" y="15" width="7" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-        </svg>
-      )
-    case '3-cols':
-      return (
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <rect x="2" y="2" width="7" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-          <rect x="11" y="2" width="7" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-          <rect x="20" y="2" width="7" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-        </svg>
-      )
-    default:
-      return (
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <rect x="2" y="2" width="24" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
-        </svg>
-      )
-  }
+  return (
+    <>
+      {(() => {
+        switch (props.presetId) {
+          case 'single':
+            return (
+              <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                <rect x="2" y="2" width="24" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+              </svg>
+            )
+          case '2-cols':
+            return (
+              <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                <rect x="2" y="2" width="11" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+                <rect x="15" y="2" width="11" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+              </svg>
+            )
+          case '2-rows':
+            return (
+              <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                <rect x="2" y="2" width="24" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+                <rect x="2" y="15" width="24" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+              </svg>
+            )
+          case '2x2':
+            return (
+              <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                <rect x="2" y="2" width="11" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+                <rect x="15" y="2" width="11" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+                <rect x="2" y="15" width="11" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+                <rect x="15" y="15" width="11" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+              </svg>
+            )
+          case 'leader':
+            return (
+              <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                <rect x="2" y="2" width="15" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+                <rect x="19" y="2" width="7" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+                <rect x="19" y="15" width="7" height="11" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+              </svg>
+            )
+          case '3-cols':
+            return (
+              <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                <rect x="2" y="2" width="7" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+                <rect x="11" y="2" width="7" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+                <rect x="20" y="2" width="7" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+              </svg>
+            )
+          default:
+            return (
+              <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                <rect x="2" y="2" width="24" height="24" rx={r} fill={fill} stroke={stroke} stroke-width={sw} />
+              </svg>
+            )
+        }
+      })()}
+    </>
+  )
 }
 
 const LayoutSelector: Component<LayoutSelectorProps> = (props) => {

@@ -8,8 +8,8 @@
 
 ### UI
 
-- [ ] The colors of the layout selection menu are not matching the color theme and are hardly visible. This is because they render as dark colors on a dark theme.
-- [ ] The Layout selection button does not reflect the currently selected layout. It does not update correctly. Only after going to the dashboard and back to the chart, it updates.
+- [x] The colors of the layout selection menu are not matching the color theme and are hardly visible. This is because they render as dark colors on a dark theme. **Fixed:** Map the `--klinecharts-pro-*` CSS variables in `dashboard.less` to `.chart-view__nav` mapping Apple-themed dark variables to the tool overlay.
+- [x] The Layout selection button does not reflect the currently selected layout. It does not update correctly. Only after going to the dashboard and back to the chart, it updates. **Fixed:** Refactored `PresetIcon` inside `LayoutSelector.tsx` to render using an inline reactive function `(() => { switch (props.presetId) { ... } })()` instead of statically to maintain reactivity to the `presetId` prop.
 
 ## TODO
 
