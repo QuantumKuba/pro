@@ -47,14 +47,15 @@ export default class CompositeDatafeed implements Datafeed {
   subscribe(
     symbol: SymbolInfo,
     period: Period,
-    callback: DatafeedSubscribeCallback
+    callback: DatafeedSubscribeCallback,
+    subscriberId?: string
   ): void {
     const datafeed = this._getDatafeed(symbol)
-    datafeed.subscribe(symbol, period, callback)
+    datafeed.subscribe(symbol, period, callback, subscriberId)
   }
 
-  unsubscribe(symbol: SymbolInfo, period: Period): void {
+  unsubscribe(symbol: SymbolInfo, period: Period, subscriberId?: string): void {
     const datafeed = this._getDatafeed(symbol)
-    datafeed.unsubscribe(symbol, period)
+    datafeed.unsubscribe(symbol, period, subscriberId)
   }
 }

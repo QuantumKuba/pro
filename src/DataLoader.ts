@@ -7,6 +7,7 @@ export default class ChartDataLoader implements ChartDataLoaderType {
   private _datafeed: Datafeed;
   private _loading: boolean;
   private _subscriptionSuspended: boolean;
+  private _subscriberId: string;
 
   // Per-instance signal accessors (injected by parent component)
   private _symbolGetter: Accessor<Nullable<SymbolInfo>> = () => null;
@@ -22,11 +23,17 @@ export default class ChartDataLoader implements ChartDataLoaderType {
   private _suppressBackwardLoading: boolean = false; // Suppress backward loading during playback
   private _onBackwardDataLoaded?: (newCandleCount: number) => void;
 
+  // Track what we last subscribed to so unsubscribe can target the correct (old) entry
+  private _lastSubscribedSymbol: SymbolInfo | null = null;
+  private _lastSubscribedPeriod: Period | null = null;
+
   constructor(datafeed: Datafeed) {
     console.info('ChartDataLoader initialized');
     this._datafeed = datafeed;
     this._loading = false;
     this._subscriptionSuspended = false;
+    this._subscriberId = `dl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    console.info('ChartDataLoader subscriberId:', this._subscriberId);
   }
 
   /**
@@ -176,14 +183,29 @@ export default class ChartDataLoader implements ChartDataLoaderType {
       console.info('Subscription suspended (replay mode), skipping')
       return
     }
-    const { symbol: _s, period: _p, callback } = params;
-    this._datafeed.subscribe(this._symbolGetter()!, this._periodGetter()!, callback)
+    // Unsubscribe from previous subscription first (if any) to avoid stale data
+    if (this._lastSubscribedSymbol && this._lastSubscribedPeriod) {
+      this._datafeed.unsubscribe(this._lastSubscribedSymbol, this._lastSubscribedPeriod, this._subscriberId)
+    }
+    const currentSymbol = this._symbolGetter()!;
+    const currentPeriod = this._periodGetter()!;
+    const { callback } = params;
+    this._lastSubscribedSymbol = currentSymbol;
+    this._lastSubscribedPeriod = currentPeriod;
+    this._datafeed.subscribe(currentSymbol, currentPeriod, callback, this._subscriberId)
   }
 
   unsubscribeBar(params: DataLoaderUnsubscribeBarParams): void {
     console.info('ChartDataLoader unsubscribeBar', params);
-    const { symbol: _s, period: _p } = params;
-    this._datafeed.unsubscribe(this._symbolGetter()!, this._periodGetter()!)
+    // Use tracked symbol/period (what we actually subscribed to) instead of current signal values
+    // which may already reflect the NEW symbol/period
+    const sym = this._lastSubscribedSymbol;
+    const per = this._lastSubscribedPeriod;
+    if (sym && per) {
+      this._datafeed.unsubscribe(sym, per, this._subscriberId)
+      this._lastSubscribedSymbol = null;
+      this._lastSubscribedPeriod = null;
+    }
   }
 
   /**
@@ -192,8 +214,14 @@ export default class ChartDataLoader implements ChartDataLoaderType {
   suspendSubscription(): void {
     console.info('ChartDataLoader suspendSubscription')
     this._subscriptionSuspended = true
-    // Unsubscribe from current feed
-    this._datafeed.unsubscribe(this._symbolGetter()!, this._periodGetter()!)
+    // Unsubscribe using tracked symbol/period
+    const sym = this._lastSubscribedSymbol;
+    const per = this._lastSubscribedPeriod;
+    if (sym && per) {
+      this._datafeed.unsubscribe(sym, per, this._subscriberId)
+      this._lastSubscribedSymbol = null;
+      this._lastSubscribedPeriod = null;
+    }
   }
 
   /**

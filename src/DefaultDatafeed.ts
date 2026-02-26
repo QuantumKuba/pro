@@ -24,9 +24,8 @@ export default class DefaultDatafeed implements Datafeed {
 
   private _apiKey: string
 
-  private _prevSymbolMarket?: string
-
-  private _ws?: WebSocket
+  /** Per-market WebSocket connections so multiple symbols can stream independently */
+  private _wsMap: Map<string, WebSocket> = new Map()
 
   async searchSymbols (search?: string): Promise<SymbolInfo[]> {
     const response = await fetch(`https://api.polygon.io/v3/reference/tickers?apiKey=${this._apiKey}&active=true&search=${search ?? ''}`)
@@ -57,39 +56,56 @@ export default class DefaultDatafeed implements Datafeed {
     }))
   }
 
-  subscribe (symbol: SymbolInfo, period: Period, callback: DatafeedSubscribeCallback): void {
-    if (this._prevSymbolMarket !== symbol.market) {
-      this._ws?.close()
-      this._ws = new WebSocket(`wss://delayed.polygon.io/${symbol.market}`)
-      this._ws.onopen = () => {
-        this._ws?.send(JSON.stringify({ action: 'auth', params: this._apiKey }))
-      }
-      this._ws.onmessage = event => {
-        const result = JSON.parse(event.data)
-        if (result[0].ev === 'status') {
-          if (result[0].status === 'auth_success') {
-            this._ws?.send(JSON.stringify({ action: 'subscribe', params: `T.${symbol.ticker}`}))
-          }
-        } else {
-          if ('sym' in result) {
-            callback({
-              timestamp: result.s,
-              open: result.o,
-              high: result.h,
-              low: result.l,
-              close: result.c,
-              volume: result.v,
-              turnover: result.vw
-            })
-          }
+  subscribe (symbol: SymbolInfo, period: Period, callback: DatafeedSubscribeCallback, subscriberId?: string): void {
+    const market = symbol.market ?? 'stocks'
+
+    // Reuse existing WebSocket for same market, just subscribe to additional ticker
+    let ws = this._wsMap.get(market)
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ action: 'subscribe', params: `T.${symbol.ticker}` }))
+      return
+    }
+
+    // Close stale connection if exists
+    if (ws) {
+      ws.close()
+      this._wsMap.delete(market)
+    }
+
+    ws = new WebSocket(`wss://delayed.polygon.io/${market}`)
+    this._wsMap.set(market, ws)
+
+    ws.onopen = () => {
+      ws!.send(JSON.stringify({ action: 'auth', params: this._apiKey }))
+    }
+    ws.onmessage = event => {
+      const result = JSON.parse(event.data)
+      if (result[0].ev === 'status') {
+        if (result[0].status === 'auth_success') {
+          ws!.send(JSON.stringify({ action: 'subscribe', params: `T.${symbol.ticker}` }))
+        }
+      } else {
+        if ('sym' in result) {
+          callback({
+            timestamp: result.s,
+            open: result.o,
+            high: result.h,
+            low: result.l,
+            close: result.c,
+            volume: result.v,
+            turnover: result.vw
+          })
         }
       }
-    } else {
-      this._ws?.send(JSON.stringify({ action: 'subscribe', params: `T.${symbol.ticker}`}))
     }
-    this._prevSymbolMarket = symbol.market
   }
 
-  unsubscribe(symbol: SymbolInfo, period: Period): void {
+  unsubscribe(symbol: SymbolInfo, period: Period, subscriberId?: string): void {
+    // Polygon uses a shared connection per market; send unsubscribe message
+    const market = symbol.market ?? 'stocks'
+    const ws = this._wsMap.get(market)
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ action: 'unsubscribe', params: `T.${symbol.ticker}` }))
+    }
   }
 }

@@ -36,8 +36,8 @@ export type DatafeedSubscribeCallback = (data: KLineData) => void
 export interface Datafeed {
   searchSymbols (search?: string): Promise<SymbolInfo[]>
   getHistoryKLineData (symbol: SymbolInfo, period: Period, from: number, to: number): Promise<KLineData[]>
-  subscribe (symbol: SymbolInfo, period: Period, callback: DatafeedSubscribeCallback): void
-  unsubscribe (symbol: SymbolInfo, period: Period): void
+  subscribe (symbol: SymbolInfo, period: Period, callback: DatafeedSubscribeCallback, subscriberId?: string): void
+  unsubscribe (symbol: SymbolInfo, period: Period, subscriberId?: string): void
 }
 
 export interface ChartDataLoaderType extends DataLoader {
