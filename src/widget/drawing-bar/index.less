@@ -236,8 +236,7 @@
       left: calc(100% + 4px);
       padding: 6px;
       border-radius: 10px;
-      max-height: 80vh;
-      overflow-y: auto;
+      overflow: visible;
       background-color: var(--klinecharts-pro-popover-background-color);
       .glass-surface();
       border: 1px solid var(--klinecharts-pro-border-color);
@@ -260,6 +259,7 @@
         fill: var(--klinecharts-pro-text-second-color);
         stroke: var(--klinecharts-pro-text-second-color);
         color: var(--klinecharts-pro-text-second-color);
+        position: relative;
         transition:
           background-color @motion-fast @motion-ease,
           fill @motion-fast @motion-ease,
@@ -267,9 +267,49 @@
           color @motion-fast @motion-ease,
           transform @motion-fast @motion-ease;
 
-        svg {
+        .drawing-overflow-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          svg {
+            width: 24px;
+            height: 24px;
+          }
+        }
+
+        // Direct SVGs (for items without submenu like measure/lock/visible/remove)
+        > svg {
           width: 24px;
           height: 24px;
+        }
+
+        .drawing-overflow-arrow {
+          position: absolute;
+          right: 2px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 4px;
+          height: 6px;
+          opacity: 0;
+          fill: var(--klinecharts-pro-text-second-color);
+          transition:
+            opacity @motion-fast @motion-ease,
+            transform @motion-fast @motion-spring;
+
+          &.rotate {
+            opacity: 0.9;
+            transform: translateY(-50%) rotate(90deg);
+          }
+        }
+
+        // Always show arrow on expanded items
+        &.expanded {
+          background-color: var(--klinecharts-pro-hover-background-color);
+
+          .drawing-overflow-arrow {
+            opacity: 0.9;
+          }
         }
 
         &:hover {
@@ -277,6 +317,10 @@
           fill: var(--klinecharts-pro-text-color);
           stroke: var(--klinecharts-pro-text-color);
           color: var(--klinecharts-pro-text-color);
+
+          .drawing-overflow-arrow {
+            opacity: 0.7;
+          }
         }
 
         &:active {
@@ -289,6 +333,66 @@
           fill: var(--klinecharts-pro-primary-color);
           stroke: var(--klinecharts-pro-primary-color);
           color: var(--klinecharts-pro-primary-color);
+        }
+
+        // Flyout sub-menu
+        .drawing-overflow-submenu {
+          position: absolute;
+          top: 0;
+          left: calc(100% + 4px);
+          white-space: nowrap;
+          padding: 6px;
+          border-radius: 10px;
+          background-color: var(--klinecharts-pro-popover-background-color);
+          .glass-surface();
+          border: 1px solid var(--klinecharts-pro-border-color);
+          box-shadow: var(--klinecharts-pro-shadow);
+          z-index: 10000;
+          animation: kc-slide-in @motion-medium @motion-spring both;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          max-height: 360px;
+          overflow-y: auto;
+
+          .drawing-overflow-submenu-item {
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            height: 36px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 450;
+            cursor: pointer;
+            color: var(--klinecharts-pro-text-color);
+            fill: var(--klinecharts-pro-text-color);
+            stroke: var(--klinecharts-pro-text-color);
+            transition:
+              background-color @motion-fast @motion-ease;
+
+            &:hover {
+              background: var(--klinecharts-pro-hover-background-color);
+            }
+
+            &:active {
+              background: var(--klinecharts-pro-selected-color);
+            }
+
+            .drawing-overflow-submenu-icon {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 24px;
+              height: 24px;
+              margin-right: 10px;
+              flex-shrink: 0;
+
+              svg {
+                width: 24px;
+                height: 24px;
+              }
+            }
+          }
         }
       }
     }
