@@ -96,10 +96,6 @@ function App() {
                 class="chart-view__logo"
                 onClick={handleBackToDashboard}
               />
-              <div class="chart-view__symbol-info">
-                <span class="chart-view__symbol">{state().symbol?.shortName}</span>
-                <span class="chart-view__pair">/ USDT</span>
-              </div>
             </div>
             <nav class="chart-view__nav">
               <LayoutSelector

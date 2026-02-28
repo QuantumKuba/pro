@@ -585,12 +585,20 @@
     backdrop-filter: blur(20px);
     z-index: 100;
     flex-shrink: 0;
+
+    @media (max-width: 768px) {
+      padding: 8px 12px;
+    }
   }
 
   &__header-left {
     display: flex;
     align-items: center;
     gap: 24px;
+    
+    @media (max-width: 768px) {
+      gap: 12px;
+    }
   }
 
   &__logo {
@@ -601,30 +609,19 @@
     &:hover {
       opacity: 0.85;
     }
-  }
-
-  &__symbol-info {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    padding-left: 24px;
-    border-left: 1px solid @border-color;
-  }
-
-  &__symbol {
-    font-size: 18px;
-    font-weight: 700;
-    color: @text-primary;
-  }
-
-  &__pair {
-    font-size: 14px;
-    color: @text-muted;
+    
+    @media (max-width: 768px) {
+      height: 28px;
+    }
   }
 
   &__nav {
     display: flex;
     gap: 8px;
+
+    @media (max-width: 768px) {
+      gap: 4px;
+    }
 
     // Map theme variables for the LayoutSelector popover
     --klinecharts-pro-popover-background-color: rgba(30, 30, 35, 0.9);
@@ -674,6 +671,15 @@
 
     svg {
       flex-shrink: 0;
+    }
+    
+    @media (max-width: 768px) {
+      padding: 6px 10px;
+      font-size: 13px;
+      
+      svg {
+        display: none;
+      }
     }
   }
 
