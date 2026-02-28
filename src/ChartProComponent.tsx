@@ -35,6 +35,7 @@ import {
   ReplayBar
 } from './widget'
 import type { DrawingBarApi } from './widget'
+import RemoveIcon from './widget/drawing-bar/icons/remove'
 
 import { translateTimezone } from './widget/timezone-modal/data'
 
@@ -365,6 +366,7 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
   const [loadingVisible, setLoadingVisible] = createSignal(false)
   const [_symbol, _setSymbol] = createSignal<Nullable<SymbolInfo>>(null)
   const [_period, _setPeriod] = createSignal<Nullable<Period>>(null)
+  const [selectedOverlay, setSelectedOverlay] = createSignal<{id: string, groupId: string, name: string} | null>(null)
 
   // Wrapper setters that also update module-level refs for backward compat
   const setWidget = (v: Chart | null) => { _setWidget(() => v); _lastWidget = v }
@@ -1421,6 +1423,20 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
               const onDrawEnd = () => {
                 drawingBarApi?.clearSelection()
               }
+              
+              const getOverlayEventHandlers = () => ({
+                onSelected: (e: any) => setSelectedOverlay({id: e.overlay.id, groupId: e.overlay.groupId, name: e.overlay.name}),
+                onDeselected: (e: any) => {
+                  if (selectedOverlay()?.id === e.overlay.id) {
+                    setSelectedOverlay(null)
+                  }
+                },
+                onRemoved: (e: any) => {
+                  if (selectedOverlay()?.id === e.overlay.id) {
+                    setSelectedOverlay(null)
+                  }
+                }
+              })
 
               if (typeof overlay === 'object') {
                 const withGroup = { groupId: (overlay as any).groupId ?? DEFAULT_GROUP_ID, ...(overlay as any) }
@@ -1430,6 +1446,7 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
                   widgetSignal()?.createOverlay({
                     ...withGroup,
                     onDrawEnd,
+                    ...getOverlayEventHandlers(),
                     onDrawing: ({ overlay: brushOverlay }) => {
                       // Only add points after the first click (currentStep > 1)
                       const internalOverlay = brushOverlay as any
@@ -1442,21 +1459,40 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
                   return
                 }
 
-                widgetSignal()?.createOverlay({ ...withGroup, onDrawEnd })
+                widgetSignal()?.createOverlay({ ...withGroup, onDrawEnd, ...getOverlayEventHandlers() })
                 return
               }
 
-              widgetSignal()?.createOverlay({ name: overlay as string, onDrawEnd })
+              widgetSignal()?.createOverlay({ name: overlay as string, onDrawEnd, ...getOverlayEventHandlers() })
             }}
             onModeChange={mode => { widgetSignal()?.overrideOverlay({ mode: mode as OverlayMode }) }}
             onLockChange={lock => { widgetSignal()?.overrideOverlay({ lock }) }}
             onVisibleChange={visible => { widgetSignal()?.overrideOverlay({ visible }) }}
             onRemoveClick={(groupId) => { widgetSignal()?.removeOverlay({ groupId }) }} />
         </Show>
-        <div
-          ref={widgetRef}
-          class='klinecharts-pro-widget'
-          data-drawing-bar-visible={drawingBarVisible()} />
+        <div 
+          class="klinecharts-pro-widget-container" 
+          data-drawing-bar-visible={drawingBarVisible()}
+        >
+          <div
+            ref={widgetRef}
+            class='klinecharts-pro-widget'
+          />
+            
+          <Show when={selectedOverlay()}>
+            <div class="klinecharts-pro-drawing-action-bar">
+              <span class="action-item" onClick={() => {
+                const current = selectedOverlay()
+                if (current) {
+                  widgetSignal()?.removeOverlay({ id: current.id })
+                  setSelectedOverlay(null)
+                }
+              }}>
+                <RemoveIcon />
+              </span>
+            </div>
+          </Show>
+        </div>
         <Show when={replayActive()}>
           <ReplayBar
             locale={locale()}
