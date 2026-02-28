@@ -28,28 +28,56 @@ const PaneSplitter: Component<PaneSplitterProps> = (props) => {
   let startPos = 0
   let totalDelta = 0
 
-  const onMouseDown = (e: MouseEvent) => {
-    e.preventDefault()
+  const onStart = (e: MouseEvent | TouchEvent) => {
+    if ('touches' in e && e.touches.length > 1) return
+    if (e.cancelable) {
+      e.preventDefault()
+    }
     e.stopPropagation()
     setDragging(true)
-    startPos = props.direction === 'horizontal' ? e.clientX : e.clientY
+    
+    let clientX, clientY
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX
+      clientY = e.touches[0].clientY
+    } else {
+      clientX = (e as MouseEvent).clientX
+      clientY = (e as MouseEvent).clientY
+    }
+
+    startPos = props.direction === 'horizontal' ? clientX : clientY
     totalDelta = 0
-    document.addEventListener('mousemove', onMouseMove)
-    document.addEventListener('mouseup', onMouseUp)
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('touchmove', onMove, { passive: false })
+    document.addEventListener('mouseup', onEnd)
+    document.addEventListener('touchend', onEnd)
     document.body.style.cursor = props.direction === 'horizontal' ? 'col-resize' : 'row-resize'
     document.body.style.userSelect = 'none'
   }
 
-  const onMouseMove = (e: MouseEvent) => {
-    const currentPos = props.direction === 'horizontal' ? e.clientX : e.clientY
+  const onMove = (e: MouseEvent | TouchEvent) => {
+    if (e.cancelable) {
+      e.preventDefault()
+    }
+    let clientX, clientY
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX
+      clientY = e.touches[0].clientY
+    } else {
+      clientX = (e as MouseEvent).clientX
+      clientY = (e as MouseEvent).clientY
+    }
+    const currentPos = props.direction === 'horizontal' ? clientX : clientY
     totalDelta = currentPos - startPos
     props.onDrag(totalDelta)
   }
 
-  const onMouseUp = () => {
+  const onEnd = () => {
     setDragging(false)
-    document.removeEventListener('mousemove', onMouseMove)
-    document.removeEventListener('mouseup', onMouseUp)
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('touchmove', onMove)
+    document.removeEventListener('mouseup', onEnd)
+    document.removeEventListener('touchend', onEnd)
     document.body.style.cursor = ''
     document.body.style.userSelect = ''
     props.onDragEnd(totalDelta)
@@ -62,15 +90,18 @@ const PaneSplitter: Component<PaneSplitterProps> = (props) => {
   }
 
   onCleanup(() => {
-    document.removeEventListener('mousemove', onMouseMove)
-    document.removeEventListener('mouseup', onMouseUp)
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('touchmove', onMove)
+    document.removeEventListener('mouseup', onEnd)
+    document.removeEventListener('touchend', onEnd)
   })
 
   return (
     <div
       class={`layout-splitter layout-splitter--${props.direction}`}
       classList={{ 'layout-splitter--active': dragging() }}
-      onMouseDown={onMouseDown}
+      onMouseDown={onStart}
+      onTouchStart={onStart}
       onDblClick={onDblClick}
     >
       <div class="layout-splitter__handle" />
