@@ -36,6 +36,8 @@ import {
 } from './widget'
 import type { DrawingBarApi } from './widget'
 import RemoveIcon from './widget/drawing-bar/icons/remove'
+import LockIcon from './widget/drawing-bar/icons/lock'
+import SettingIcon from './widget/drawing-bar/icons/visible' // We will use visible/settings icons generically or any available tool icon
 
 import { translateTimezone } from './widget/timezone-modal/data'
 
@@ -1480,8 +1482,25 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
           />
             
           <Show when={selectedOverlay()}>
-            <div class="klinecharts-pro-drawing-action-bar">
-              <span class="action-item" onClick={() => {
+            <div class="klinecharts-pro-drawing-action-bar macos-pill-bar">
+              {/* Settings Action (Placeholder for future property modal) */}
+              <span class="action-item" title="Settings">
+                <SettingIcon />
+              </span>
+              <div class="divider"></div>
+              {/* Lock Action (Toggle lock state of drawing) */}
+              <span class="action-item" title="Lock" onClick={() => {
+                const current = selectedOverlay()
+                if (current) {
+                  // Toggle lock for the specific drawing (if supported by klinecharts override)
+                  widgetSignal()?.overrideOverlay({ id: current.id, lock: true })
+                }
+              }}>
+                <LockIcon />
+              </span>
+              <div class="divider"></div>
+              {/* Remove Action */}
+              <span class="action-item delete-item" title="Remove" onClick={() => {
                 const current = selectedOverlay()
                 if (current) {
                   widgetSignal()?.removeOverlay({ id: current.id })

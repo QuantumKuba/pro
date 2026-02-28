@@ -121,18 +121,29 @@
   }
   &-drawing-action-bar {
     position: absolute;
-    bottom: 32px;
+    top: 16px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 100;
+    z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: var(--klinecharts-pro-popover-background-color);
     border: 1px solid var(--klinecharts-pro-border-color);
-    border-radius: var(--klinecharts-pro-border-radius);
+    border-radius: 20px; // Pill shape
     box-shadow: var(--klinecharts-pro-shadow);
-    padding: 6px;
+    padding: 4px 8px;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    animation: kc-slide-down-fade 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) both;
+
+    .divider {
+      width: 1px;
+      height: 16px;
+      background-color: var(--klinecharts-pro-border-color);
+      margin: 0 4px;
+      opacity: 0.8;
+    }
     
     .action-item {
       display: flex;
@@ -140,19 +151,53 @@
       justify-content: center;
       width: 32px;
       height: 32px;
-      border-radius: var(--klinecharts-pro-border-radius);
+      border-radius: 16px; // Circular highlight
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: all 0.2s ease;
+      color: var(--klinecharts-pro-text-color);
       
       &:hover {
         background-color: var(--klinecharts-pro-hover-background-color);
+        transform: scale(1.05);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+
+      &.delete-item:hover {
+        background-color: rgba(220, 53, 69, 0.15); // Subtle red hover for delete
+        color: #dc3545;
+
+        .icon-overlay {
+          fill: #dc3545;
+        }
       }
       
       .icon-overlay {
-        width: 20px;
-        height: 20px;
-        fill: var(--klinecharts-pro-text-color);
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+        transition: fill 0.2s;
+      }
+
+      svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
       }
     }
+  }
+}
+
+// Slide down animation for the pill
+@keyframes kc-slide-down-fade {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
   }
 }
