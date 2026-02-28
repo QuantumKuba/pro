@@ -37,7 +37,9 @@ import {
 import type { DrawingBarApi } from './widget'
 import RemoveIcon from './widget/drawing-bar/icons/remove'
 import LockIcon from './widget/drawing-bar/icons/lock'
+import UnlockIcon from './widget/drawing-bar/icons/unlock'
 import SettingIcon from './widget/drawing-bar/icons/visible' // We will use visible/settings icons generically or any available tool icon
+import InvisibleIcon from './widget/drawing-bar/icons/invisible'
 
 import { translateTimezone } from './widget/timezone-modal/data'
 
@@ -368,7 +370,13 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
   const [loadingVisible, setLoadingVisible] = createSignal(false)
   const [_symbol, _setSymbol] = createSignal<Nullable<SymbolInfo>>(null)
   const [_period, _setPeriod] = createSignal<Nullable<Period>>(null)
-  const [selectedOverlay, setSelectedOverlay] = createSignal<{id: string, groupId: string, name: string} | null>(null)
+  const [selectedOverlay, setSelectedOverlay] = createSignal<{
+    id: string, 
+    groupId: string, 
+    name: string, 
+    lock: boolean, 
+    visible: boolean
+  } | null>(null)
 
   // Wrapper setters that also update module-level refs for backward compat
   const setWidget = (v: Chart | null) => { _setWidget(() => v); _lastWidget = v }
@@ -1427,7 +1435,13 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
               }
               
               const getOverlayEventHandlers = () => ({
-                onSelected: (e: any) => setSelectedOverlay({id: e.overlay.id, groupId: e.overlay.groupId, name: e.overlay.name}),
+                onSelected: (e: any) => setSelectedOverlay({
+                  id: e.overlay.id, 
+                  groupId: e.overlay.groupId, 
+                  name: e.overlay.name,
+                  lock: !!e.overlay.lock,
+                  visible: e.overlay.visible !== false // default true
+                }),
                 onDeselected: (e: any) => {
                   if (selectedOverlay()?.id === e.overlay.id) {
                     setSelectedOverlay(null)
@@ -1483,20 +1497,28 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
             
           <Show when={selectedOverlay()}>
             <div class="klinecharts-pro-drawing-action-bar macos-pill-bar">
-              {/* Settings Action (Placeholder for future property modal) */}
-              <span class="action-item" title="Settings">
-                <SettingIcon />
+              {/* Settings Action (Visibility Toggle placeholder) */}
+              <span class="action-item" title="Toggle Visibility" onClick={() => {
+                const current = selectedOverlay()
+                if (current) {
+                  const newVisible = !current.visible
+                  widgetSignal()?.overrideOverlay({ id: current.id, visible: newVisible })
+                  setSelectedOverlay({ ...current, visible: newVisible })
+                }
+              }}>
+                { selectedOverlay()?.visible ? <SettingIcon /> : <InvisibleIcon /> }
               </span>
               <div class="divider"></div>
               {/* Lock Action (Toggle lock state of drawing) */}
               <span class="action-item" title="Lock" onClick={() => {
                 const current = selectedOverlay()
                 if (current) {
-                  // Toggle lock for the specific drawing (if supported by klinecharts override)
-                  widgetSignal()?.overrideOverlay({ id: current.id, lock: true })
+                  const newLock = !current.lock
+                  widgetSignal()?.overrideOverlay({ id: current.id, lock: newLock })
+                  setSelectedOverlay({ ...current, lock: newLock })
                 }
               }}>
-                <LockIcon />
+                { selectedOverlay()?.lock ? <LockIcon /> : <UnlockIcon /> }
               </span>
               <div class="divider"></div>
               {/* Remove Action */}
