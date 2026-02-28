@@ -129,6 +129,19 @@
     border-bottom: 1px solid var(--klinecharts-pro-border-color);
     flex-shrink: 0;
     z-index: 5;
+
+    // Desktop: keep controls accessible without reserving vertical space.
+    @media (min-width: 769px) {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      min-height: 0;
+      padding: 0;
+      border-bottom: none;
+      background-color: transparent;
+      pointer-events: none;
+    }
   }
 
   &__header-info {
@@ -136,6 +149,10 @@
     align-items: center;
     gap: 6px;
     overflow: hidden;
+
+    @media (min-width: 769px) {
+      display: none;
+    }
   }
 
   &__symbol {
@@ -164,6 +181,14 @@
       opacity @motion-fast @motion-ease,
       background-color @motion-fast @motion-ease,
       color @motion-fast @motion-ease;
+
+    @media (min-width: 769px) {
+      margin: 6px 6px 0 auto;
+      pointer-events: auto;
+      background-color: var(--klinecharts-pro-popover-background-color);
+      border: 1px solid var(--klinecharts-pro-border-color);
+      box-shadow: var(--klinecharts-pro-shadow);
+    }
 
     &:hover {
       background-color: var(--klinecharts-pro-hover-background-color);
