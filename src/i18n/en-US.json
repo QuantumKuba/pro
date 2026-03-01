@@ -38,6 +38,8 @@
   "pvt": "PVT(Price and Volume Trend)",
   "ao": "AO(Awesome Oscillator)",
   "ichimoku": "Ichimoku Cloud",
+  "svp": "SVP(Session Volume Profile)",
+  "vrvp": "VRVP(Visible Range Volume Profile)",
   "conversion_period": "Conversion Period",
   "base_period": "Base Period",
   "lagging_span_period": "Lagging Span Period",

@@ -38,6 +38,8 @@
   "pvt": "PVT(价量趋势指标)",
   "ao": "AO(动量震荡指标)",
   "ichimoku": "一目均衡表",
+  "svp": "SVP(分时成交量分布)",
+  "vrvp": "VRVP(可见范围成交量分布)",
   "conversion_period": "转换周期",
   "base_period": "基准周期",
   "lagging_span_period": "延迟跨度周期",

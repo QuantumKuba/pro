@@ -13,13 +13,19 @@
  */
 
 import ichimokuCloud from './ichimokuCloud'
+import sessionVolumeProfile from './sessionVolumeProfile'
+import visibleRangeVolumeProfile from './visibleRangeVolumeProfile'
 
 export {
-  ichimokuCloud
+  ichimokuCloud,
+  sessionVolumeProfile,
+  visibleRangeVolumeProfile
 }
 
 const indicators = [
-  ichimokuCloud
+  ichimokuCloud,
+  sessionVolumeProfile,
+  visibleRangeVolumeProfile
 ]
 
 export default indicators
