@@ -2,6 +2,7 @@ import { DataLoaderGetBarsParams, DataLoaderSubscribeBarParams, DataLoaderUnsubs
 import { ChartDataLoaderType, Datafeed, Period, SymbolInfo } from "./types";
 import type { Accessor, Setter } from "solid-js";
 import type { Nullable } from "klinecharts";
+import priceAlertService from "./PriceAlertService";
 
 export default class ChartDataLoader implements ChartDataLoaderType {
   private _datafeed: Datafeed;
@@ -192,7 +193,15 @@ export default class ChartDataLoader implements ChartDataLoaderType {
     const { callback } = params;
     this._lastSubscribedSymbol = currentSymbol;
     this._lastSubscribedPeriod = currentPeriod;
-    this._datafeed.subscribe(currentSymbol, currentPeriod, callback, this._subscriberId)
+    let previousClose: number | undefined;
+    const wrappedCallback = (data: KLineData) => {
+      callback(data)
+      if (currentSymbol.ticker && data.close != null) {
+        priceAlertService.checkPrice(currentSymbol.ticker, data.close, previousClose)
+        previousClose = data.close
+      }
+    }
+    this._datafeed.subscribe(currentSymbol, currentPeriod, wrappedCallback, this._subscriberId)
   }
 
   unsubscribeBar(params: DataLoaderUnsubscribeBarParams): void {

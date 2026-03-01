@@ -1,0 +1,85 @@
+@import (reference) '../../base.less';
+
+.klinecharts-pro-earnings-modal {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0;
+
+  .loading-container {
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+  }
+
+  .earnings-table-container {
+    max-height: 450px;
+    overflow-y: auto;
+  }
+
+  .earnings-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th {
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--klinecharts-pro-text-second-color);
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--klinecharts-pro-border-color);
+    }
+
+    td {
+      padding: 12px;
+      font-size: 13px;
+      color: var(--klinecharts-pro-text-color);
+      border-bottom: 1px solid var(--klinecharts-pro-border-color);
+    }
+
+    .symbol {
+      font-weight: 600;
+    }
+
+    .date-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      .date {
+        font-weight: 500;
+      }
+
+      .hour-badge {
+        font-size: 10px;
+        color: var(--klinecharts-pro-text-second-color);
+      }
+    }
+
+    .estimate {
+      color: var(--klinecharts-pro-text-second-color);
+
+      small {
+        font-size: 10px;
+        opacity: 0.7;
+      }
+    }
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 40px 20px;
+    color: var(--klinecharts-pro-text-second-color);
+
+    span { font-size: 32px; }
+    p { font-size: 13px; margin: 0; }
+
+    .hint {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+  }
+}

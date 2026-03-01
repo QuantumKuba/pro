@@ -1,0 +1,158 @@
+@import (reference) '../../base.less';
+
+.klinecharts-pro-watchlist-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 10px 0;
+
+  .watchlist-tabs {
+    .tabs-list {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      background: var(--klinecharts-pro-card-background-color, rgba(255, 255, 255, 0.05));
+      padding: 4px;
+      border-radius: 10px;
+
+      .tab {
+        padding: 8px 16px;
+        border: none;
+        background: transparent;
+        color: var(--klinecharts-pro-text-second-color);
+        font-size: 13px;
+        font-weight: 500;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        &:hover {
+          color: var(--klinecharts-pro-text-color);
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        &.active {
+          background: var(--klinecharts-pro-primary-color, #2196f3);
+          color: #ffffff;
+        }
+
+        &.add-tab {
+          font-size: 16px;
+          font-weight: 700;
+          padding: 8px 12px;
+        }
+
+        .tab-delete {
+          font-size: 14px;
+          opacity: 0.6;
+          &:hover { opacity: 1; }
+        }
+      }
+    }
+  }
+
+  .create-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: var(--klinecharts-pro-card-background-color, rgba(255, 255, 255, 0.05));
+    border-radius: 10px;
+
+    .form-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+  }
+
+  .watchlist-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .add-symbol-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .symbols-table-container {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .symbols-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th {
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--klinecharts-pro-text-second-color);
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--klinecharts-pro-border-color);
+    }
+
+    td {
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--klinecharts-pro-text-color);
+      border-bottom: 1px solid var(--klinecharts-pro-border-color);
+    }
+
+    .symbol-row {
+      cursor: pointer;
+      transition: background 0.15s ease;
+
+      &:hover {
+        background: var(--klinecharts-pro-hover-background-color, rgba(255, 255, 255, 0.05));
+      }
+    }
+
+    .symbol-name {
+      font-weight: 600;
+    }
+
+    .positive {
+      color: #26a69a;
+    }
+
+    .negative {
+      color: #ef5350;
+    }
+
+    .remove-btn {
+      background: none;
+      border: none;
+      color: var(--klinecharts-pro-text-second-color);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+
+      &:hover {
+        color: #ef5350;
+        background: rgba(239, 83, 80, 0.1);
+      }
+    }
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 40px 20px;
+    color: var(--klinecharts-pro-text-second-color);
+
+    span { font-size: 32px; }
+    p { font-size: 13px; margin: 0; }
+  }
+}

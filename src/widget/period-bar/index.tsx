@@ -34,6 +34,7 @@ export interface PeriodBarProps {
   onScreenshotClick: () => void
   onPeriodSettingClick: () => void
   onReplayClick: () => void
+  onPriceAlertClick?: () => void
 }
 
 // Number of period buttons to keep visible at narrow breakpoint
@@ -214,6 +215,17 @@ const PeriodBar: Component<PeriodBarProps> = props => {
         </svg>
         <span>{i18n('screenshot', props.locale)}</span>
       </div>
+      <Show when={props.onPriceAlertClick}>
+        <div
+          class='item tools'
+          data-tooltip={i18n('price_alerts', props.locale)}
+          onClick={() => props.onPriceAlertClick?.()}>
+          <svg viewBox="0 0 20 20">
+            <path d="M10 1a6 6 0 016 6c0 3.13 1 4.5 1.5 5.25a.75.75 0 01-.63 1.15H3.13a.75.75 0 01-.63-1.15C3 11.5 4 10.13 4 7a6 6 0 016-6zm-2 14h4a2 2 0 01-4 0z" />
+          </svg>
+          <span>{i18n('price_alerts', props.locale)}</span>
+        </div>
+      </Show>
       <div class="tools-overflow">
         <div
           class="tools-overflow-btn"
@@ -259,6 +271,14 @@ const PeriodBar: Component<PeriodBarProps> = props => {
               <svg viewBox="0 0 20 20"><path d="M6.50977,1L13.4902,1C13.6406,1,13.7695,1.11,13.7969,1.26L14.0273,2.52C14.1387,3.13,14.6543,3.57,15.2559,3.57L17.5,3.57C18.8809,3.57,20,4.72,20,6.14L20,16.43C20,17.85,18.8809,19,17.5,19L2.5,19C1.11914,19,0,17.85,0,16.43L0,6.14C0,4.72,1.11914,3.57,2.5,3.57L4.74414,3.57C5.3457,3.57,5.86133,3.13,5.97266,2.52L6.20312,1.26C6.23047,1.11,6.35937,1,6.50977,1ZM10,6.14C7.06641,6.14,4.6875,8.59,4.6875,11.61C4.6875,14.62,7.06641,17.07,10,17.07C12.9336,17.07,15.3125,14.62,15.3125,11.61C15.3125,8.59,12.9336,6.14,10,6.14ZM10,7.43C12.0711,7.43,13.75,9.31,13.75,11.61C13.75,13.91,12.0711,15.79,10,15.79C7.92893,15.79,6.25,13.91,6.25,11.61C6.25,9.31,7.92893,7.43,10,7.43Z" /></svg>
               <span>{i18n('screenshot', props.locale)}</span>
             </div>
+            <Show when={props.onPriceAlertClick}>
+              <div
+                class="tools-overflow-item"
+                onClick={() => { props.onPriceAlertClick?.(); setToolsOpen(false) }}>
+                <svg viewBox="0 0 20 20"><path d="M10 1a6 6 0 016 6c0 3.13 1 4.5 1.5 5.25a.75.75 0 01-.63 1.15H3.13a.75.75 0 01-.63-1.15C3 11.5 4 10.13 4 7a6 6 0 016-6zm-2 14h4a2 2 0 01-4 0z" /></svg>
+                <span>{i18n('price_alerts', props.locale)}</span>
+              </div>
+            </Show>
           </div>
         </Show>
       </div>

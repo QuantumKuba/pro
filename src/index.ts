@@ -26,6 +26,11 @@ import { LayoutManager, LayoutSelector } from './layout'
 
 import { load } from './i18n'
 
+import watchlistService from './WatchlistService'
+import priceAlertService from './PriceAlertService'
+import newsService from './NewsService'
+import earningsService from './EarningsService'
+
 import { Datafeed, SymbolInfo, Period, DatafeedSubscribeCallback, ChartProOptions, ChartPro } from './types'
 
 import './index.less'
@@ -41,12 +46,21 @@ export {
   KLineChartPro,
   LayoutManager,
   LayoutSelector,
-  load as loadLocales
+  load as loadLocales,
+  watchlistService,
+  priceAlertService,
+  newsService,
+  earningsService
 }
 
 export type {
   Datafeed, SymbolInfo, Period, DatafeedSubscribeCallback, ChartProOptions, ChartPro
 }
+
+export type { Watchlist, WatchlistItem } from './WatchlistService'
+export type { PriceAlert, AlertType } from './PriceAlertService'
+export type { NewsArticle } from './NewsService'
+export type { EarningsEvent } from './EarningsService'
 
 export type { LayoutManagerApi, LayoutManagerProps } from './layout'
 export type { LayoutNode, LayoutState, PaneConfig, LayoutPreset, SplitDirection } from './layout'

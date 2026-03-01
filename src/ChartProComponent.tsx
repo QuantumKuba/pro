@@ -32,7 +32,7 @@ import { SelectDataSourceItem, Loading } from './component'
 import {
   PeriodBar, DrawingBar, IndicatorModal, TimezoneModal, SettingModal,
   ScreenshotModal, IndicatorSettingModal, SymbolSearchModal, PeriodSettingModal,
-  ReplayBar
+  ReplayBar, PriceAlertModal
 } from './widget'
 import type { DrawingBarApi } from './widget'
 import RemoveIcon from './widget/drawing-bar/icons/remove'
@@ -47,6 +47,9 @@ import { SymbolInfo, Period, ChartProOptions, ChartPro } from './types'
 import ChartDataLoader from './DataLoader'
 import ReplayController from './ReplayController'
 import { ReplayState, ReplaySpeed, DEFAULT_REPLAY_STATE } from './ReplayTypes'
+import priceAlertService, { PriceAlert } from './PriceAlertService'
+
+const PRICE_ALERT_GROUP_ID = 'price_alert_lines'
 
 type AxisType = 'normal' | 'percentage' | 'log'
 
@@ -483,6 +486,8 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
   const [symbolSearchModalVisible, setSymbolSearchModalVisible] = createSignal(false)
 
   const [periodSettingModalVisible, setPeriodSettingModalVisible] = createSignal(false)
+
+  const [priceAlertModalVisible, setPriceAlertModalVisible] = createSignal(false)
 
   const [indicatorSettingModalParams, setIndicatorSettingModalParams] = createSignal({
     visible: false, indicatorName: '', paneId: '', calcParams: [] as Array<any>
@@ -1252,6 +1257,70 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
     refreshPriceUnit()
   })
 
+  // --- Price alert overlay lines ---
+  const [alertVersion, setAlertVersion] = createSignal(0)
+
+  // Subscribe to alert service changes
+  const unsubAlerts = priceAlertService.subscribe(() => setAlertVersion(v => v + 1))
+  onCleanup(unsubAlerts)
+
+  createEffect(() => {
+    const chart = widgetSignal()
+    if (!chart) return
+    const sym = symbolSignal()?.ticker?.toUpperCase()
+    // access version to re-run when alerts change
+    alertVersion()
+
+    // Remove existing alert overlays
+    chart.removeOverlay({ groupId: PRICE_ALERT_GROUP_ID })
+
+    if (!sym) return
+
+    const alerts = priceAlertService.getAlertsBySymbol(sym)
+    for (const alert of alerts) {
+      if (alert.targetPrice == null) continue
+      const color = alert.alertType === 'above' ? '#2196F3' : alert.alertType === 'below' ? '#FF5252' : '#FF9800'
+      const label = `${alert.alertType === 'above' ? '▲' : alert.alertType === 'below' ? '▼' : '◆'} ${alert.targetPrice}`
+      chart.createOverlay({
+        name: 'horizontalStraightLine',
+        groupId: PRICE_ALERT_GROUP_ID,
+        lock: false,
+        visible: true,
+        points: [{ value: alert.targetPrice }],
+        styles: {
+          line: {
+            style: 'dashed' as any,
+            dashedValue: [6, 4],
+            color: alert.isActive ? color : '#888888',
+            size: 1
+          },
+          text: {
+            color: '#ffffff',
+            backgroundColor: alert.isActive ? color : '#888888',
+            borderColor: alert.isActive ? color : '#888888'
+          }
+        },
+        extendData: { alertId: alert.id },
+        onSelected: (e: any) => setSelectedOverlay({
+          id: e.overlay.id,
+          groupId: e.overlay.groupId,
+          name: e.overlay.name,
+          lock: !!e.overlay.lock,
+          visible: e.overlay.visible !== false
+        }),
+        onDeselected: (e: any) => {
+          if (selectedOverlay()?.id === e.overlay.id) {
+            setSelectedOverlay(null)
+          }
+        },
+        onRightClick: () => {
+          setPriceAlertModalVisible(true)
+          return true
+        }
+      })
+    }
+  })
+
   return (
     <>
       <i class="icon-close klinecharts-pro-load-icon" />
@@ -1383,6 +1452,15 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
             setPeriod(p)
           }} />
       </Show>
+      <Show when={priceAlertModalVisible()}>
+        <PriceAlertModal
+          locale={locale()}
+          visible={priceAlertModalVisible()}
+          currentSymbol={symbolSignal()?.ticker}
+          datafeed={props.dataloader}
+          onClose={() => { setPriceAlertModalVisible(false) }}
+        />
+      </Show>
       <PeriodBar
         locale={locale()}
         symbol={symbolSignal()!}
@@ -1408,6 +1486,7 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
           }
         }}
         onPeriodSettingClick={() => { setPeriodSettingModalVisible(true) }}
+        onPriceAlertClick={() => { setPriceAlertModalVisible(v => !v) }}
         onReplayClick={() => {
           if (replayActive()) {
             stopReplay()
@@ -1495,7 +1574,8 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
             class='klinecharts-pro-widget'
           />
             
-          <Show when={selectedOverlay()}>
+          {/* Drawing overlay pill bar */}
+          <Show when={selectedOverlay() && selectedOverlay()!.groupId !== PRICE_ALERT_GROUP_ID}>
             <div class="klinecharts-pro-drawing-action-bar macos-pill-bar">
               {/* Settings Action (Visibility Toggle placeholder) */}
               <span class="action-item" title="Toggle Visibility" onClick={() => {
@@ -1532,6 +1612,57 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
                 <RemoveIcon />
               </span>
             </div>
+          </Show>
+
+          {/* Price alert overlay pill bar */}
+          <Show when={selectedOverlay() && selectedOverlay()!.groupId === PRICE_ALERT_GROUP_ID}>
+            {(() => {
+              const getAlertFromOverlay = () => {
+                const sel = selectedOverlay()
+                if (!sel) return null
+                const overlays = widgetSignal()?.getOverlays({ id: sel.id }) ?? []
+                const overlay = overlays[0] as any
+                const alertId = overlay?.extendData?.alertId
+                if (!alertId) return null
+                return priceAlertService.getAlerts().find(a => a.id === alertId) ?? null
+              }
+              return (
+                <div class="klinecharts-pro-drawing-action-bar macos-pill-bar">
+                  {/* Toggle active/inactive */}
+                  <span class="action-item" title={getAlertFromOverlay()?.isActive ? 'Deactivate Alert' : 'Activate Alert'} onClick={() => {
+                    const alert = getAlertFromOverlay()
+                    if (alert) {
+                      priceAlertService.toggleActive(alert.id)
+                      setSelectedOverlay(null)
+                    }
+                  }}>
+                    { getAlertFromOverlay()?.isActive ? <SettingIcon /> : <InvisibleIcon /> }
+                  </span>
+                  <div class="divider"></div>
+                  {/* Edit: open price alert modal */}
+                  <span class="action-item" title="Edit Alerts" onClick={() => {
+                    setPriceAlertModalVisible(true)
+                    setSelectedOverlay(null)
+                  }}>
+                    <svg viewBox="0 0 1024 1024" width="18" height="18" fill="currentColor">
+                      <path d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z"/>
+                      <path d="M464 336a48 48 0 1 0 96 0 48 48 0 1 0-96 0zm72 112h-48c-4.4 0-8 3.6-8 8v272c0 4.4 3.6 8 8 8h48c4.4 0 8-3.6 8-8V456c0-4.4-3.6-8-8-8z"/>
+                    </svg>
+                  </span>
+                  <div class="divider"></div>
+                  {/* Delete alert */}
+                  <span class="action-item delete-item" title="Delete Alert" onClick={() => {
+                    const alert = getAlertFromOverlay()
+                    if (alert) {
+                      priceAlertService.deleteAlert(alert.id)
+                      setSelectedOverlay(null)
+                    }
+                  }}>
+                    <RemoveIcon />
+                  </span>
+                </div>
+              )
+            })()}
           </Show>
         </div>
         <Show when={replayActive()}>
