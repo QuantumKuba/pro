@@ -1,15 +1,15 @@
 /**
  * Dashboard Styles
- * Modern dark theme with glassmorphism effects
+ * TradingView-inspired density with an Apple-like polished shell
  */
 
 @import "../index.less";
 
 // Color palette
-@bg-primary: #0a0a0b;
-@bg-secondary: #111113;
-@bg-card: rgba(22, 22, 26, 0.8);
-@bg-card-hover: rgba(30, 30, 35, 0.9);
+@bg-primary: #090b10;
+@bg-secondary: #111722;
+@bg-card: rgba(16, 21, 31, 0.78);
+@bg-card-hover: rgba(24, 32, 47, 0.92);
 @border-color: rgba(255, 255, 255, 0.08);
 @border-color-hover: rgba(255, 255, 255, 0.15);
 
@@ -17,18 +17,18 @@
 @text-secondary: rgba(255, 255, 255, 0.7);
 @text-muted: rgba(255, 255, 255, 0.45);
 
-@accent-green: #00d26a;
+@accent-green: #22d58f;
 @accent-green-dim: rgba(0, 210, 106, 0.15);
 @accent-red: #f6465d;
 @accent-red-dim: rgba(246, 70, 93, 0.15);
-@accent-blue: #0ea4e6;
-@accent-cyan: #36def3;
+@accent-blue: #3d8bff;
+@accent-cyan: #52d3ff;
 
 @gradient-primary: linear-gradient(
   135deg,
-  @accent-blue 0%,
-  @accent-cyan 50%,
-  #39ef85 100%
+  #2f5cff 0%,
+  @accent-blue 48%,
+  @accent-cyan 100%
 );
 @glass-border: linear-gradient(
   135deg,
@@ -71,29 +71,37 @@
 // Dashboard Layout
 .crypto-dashboard {
   min-height: 100vh;
-  background: @bg-primary;
+  background:
+    radial-gradient(circle at 0% -10%, rgba(61, 139, 255, 0.23), transparent 33%),
+    radial-gradient(circle at 100% 0%, rgba(82, 211, 255, 0.16), transparent 30%),
+    @bg-primary;
   color: @text-primary;
   font-family:
-    "Inter",
+    "SF Pro Display",
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
-    Roboto,
     sans-serif;
   overflow-x: hidden;
 
   &__header {
-    padding: 20px 32px;
+    padding: 18px 28px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid @border-color;
-    background: rgba(10, 10, 11, 0.85);
-    backdrop-filter: blur(40px) saturate(180%);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    background: rgba(8, 11, 17, 0.86);
+    backdrop-filter: blur(32px) saturate(170%);
+    -webkit-backdrop-filter: blur(32px) saturate(170%);
     position: sticky;
     top: 0;
     z-index: 100;
+
+    @media (max-width: 768px) {
+      padding: 14px 12px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
   }
 
   &__logo {
@@ -109,10 +117,14 @@
   &__nav {
     display: flex;
     gap: 8px;
+
+    @media (max-width: 768px) {
+      width: 100%;
+    }
   }
 
   &__nav-btn {
-    padding: 8px 16px;
+    padding: 8px 14px;
     border-radius: 8px;
     border: 1px solid @border-color;
     background: transparent;
@@ -136,15 +148,260 @@
   }
 
   &__content {
-    max-width: 1400px;
+    max-width: 1520px;
     margin: 0 auto;
-    padding: 32px;
+    padding: 22px;
+
+    @media (max-width: 768px) {
+      padding: 12px;
+    }
   }
 
   &__grid {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
-    gap: 24px;
+    gap: 18px;
+  }
+}
+
+.market-hero {
+  margin-bottom: 18px;
+
+  &__header {
+    align-items: flex-start;
+    gap: 12px;
+
+    @media (max-width: 1024px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+  &__subtitle {
+    margin: 4px 0 0;
+    color: @text-muted;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+  }
+
+  &__search {
+    min-width: 280px;
+    border: 1px solid @border-color;
+    background: rgba(10, 15, 24, 0.85);
+    color: @text-primary;
+    border-radius: 10px;
+    height: 38px;
+    padding: 0 12px;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+
+    &:focus {
+      border-color: @accent-cyan;
+      outline: none;
+    }
+
+    @media (max-width: 1024px) {
+      min-width: 0;
+      width: 100%;
+    }
+  }
+
+  &__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 14px;
+    padding: 14px;
+
+    @media (max-width: 1200px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__screener {
+    border: 1px solid @border-color;
+    border-radius: 14px;
+    overflow: auto;
+    background: rgba(8, 12, 20, 0.75);
+    max-height: 620px;
+  }
+
+  &__sidebar {
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    gap: 12px;
+  }
+}
+
+.market-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 880px;
+
+  th,
+  td {
+    text-align: left;
+    padding: 11px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  th {
+    color: @text-muted;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.015);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  &__link {
+    border: 0;
+    background: transparent;
+    color: @text-primary;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1.2;
+
+    small {
+      color: @text-muted;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+  }
+}
+
+.market-chip {
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-family: "SF Mono", "Monaco", "Consolas", monospace;
+
+  &--up {
+    color: @accent-green;
+    background: @accent-green-dim;
+  }
+
+  &--down {
+    color: @accent-red;
+    background: @accent-red-dim;
+  }
+}
+
+.icon-toggle {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid @border-color;
+  background: transparent;
+  color: @text-muted;
+  cursor: pointer;
+
+  &:hover {
+    color: @text-primary;
+    border-color: @border-color-hover;
+  }
+
+  &--active {
+    color: @accent-cyan;
+    border-color: rgba(82, 211, 255, 0.5);
+    background: rgba(82, 211, 255, 0.12);
+  }
+}
+
+.side-panel {
+  background: rgba(8, 12, 20, 0.72);
+  border: 1px solid @border-color;
+  border-radius: 14px;
+  padding: 12px;
+
+  h3 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    color: @text-secondary;
+  }
+
+  &__list {
+    display: grid;
+    gap: 8px;
+    max-height: 220px;
+    overflow: auto;
+  }
+
+  &__item {
+    border: 1px solid @border-color;
+    background: rgba(255, 255, 255, 0.015);
+    color: @text-primary;
+    border-radius: 10px;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    cursor: pointer;
+
+    &:hover {
+      border-color: @border-color-hover;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .up {
+      color: @accent-green;
+    }
+
+    .down {
+      color: @accent-red;
+    }
+  }
+
+  &__empty {
+    margin: 0;
+    color: @text-muted;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  &--news {
+    .side-panel__list {
+      max-height: 330px;
+    }
+  }
+}
+
+.news-item {
+  border: 1px solid @border-color;
+  border-radius: 10px;
+  padding: 10px;
+  text-decoration: none;
+  display: grid;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.015);
+
+  &:hover {
+    border-color: @border-color-hover;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  &__title {
+    color: @text-primary;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  &__meta {
+    color: @text-muted;
+    font-size: 11px;
   }
 }
 
