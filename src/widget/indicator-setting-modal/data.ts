@@ -143,5 +143,17 @@ export default {
     { paramNameKey: 'base_period', precision: 0, min: 1, default: 26 },
     { paramNameKey: 'lagging_span_period', precision: 0, min: 1, default: 52 },
     { paramNameKey: 'displacement', precision: 0, min: 1, default: 26 }
+  ],
+  SVP: [
+    { paramNameKey: 'vp_num_bins', precision: 0, min: 4, default: 24 },
+    { paramNameKey: 'vp_va_percent', precision: 0, min: 10, default: 70 },
+    { paramNameKey: 'vp_session_type', precision: 0, min: 0, default: 0 },
+    { paramNameKey: 'vp_opacity', precision: 0, min: 5, default: 30 }
+  ],
+  VRVP: [
+    { paramNameKey: 'vp_num_bins', precision: 0, min: 4, default: 24 },
+    { paramNameKey: 'vp_va_percent', precision: 0, min: 10, default: 70 },
+    { paramNameKey: 'vp_max_width', precision: 0, min: 5, default: 30 },
+    { paramNameKey: 'vp_opacity', precision: 0, min: 5, default: 40 }
   ]
 }
