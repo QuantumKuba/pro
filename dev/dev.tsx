@@ -89,28 +89,26 @@ function App() {
       <Show when={state().view === 'chart'}>
         <div class="chart-view">
           <header class="chart-view__header">
-            <div class="chart-view__header-left">
-              <img 
-                src="/logo_with_text.svg" 
-                alt="DeltaScope AI" 
-                class="chart-view__logo"
-                onClick={handleBackToDashboard}
-              />
-            </div>
+            <img 
+              src="/logo_with_text.svg" 
+              alt="DeltaScope AI" 
+              class="chart-view__logo"
+              onClick={handleBackToDashboard}
+            />
             <nav class="chart-view__nav">
+              <div class="chart-view__segmented">
+                <button class="chart-view__seg-btn" onClick={handleBackToDashboard}>
+                  Dashboard
+                </button>
+                <button class="chart-view__seg-btn chart-view__seg-btn--active">
+                  Trade
+                </button>
+              </div>
+              <div class="chart-view__divider" />
               <LayoutSelector
                 currentPresetId={currentPresetId()}
                 onSelect={handleLayoutSelect}
               />
-              <button class="chart-view__nav-btn" onClick={handleBackToDashboard}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-                Dashboard
-              </button>
-              <button class="chart-view__nav-btn chart-view__nav-btn--active">
-                Trade
-              </button>
             </nav>
           </header>
           <div class="chart-view__chart">

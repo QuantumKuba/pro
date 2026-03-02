@@ -273,23 +273,25 @@ export const CryptoDashboard: Component<CryptoDashboardProps> = (props) => {
           class="crypto-dashboard__logo"
         />
         <nav class="crypto-dashboard__nav">
-          <button class="crypto-dashboard__nav-btn crypto-dashboard__nav-btn--active">
-            Dashboard
-          </button>
-          <button 
-            class="crypto-dashboard__nav-btn"
-            onClick={() => handleCoinClick({
-              ticker: 'BTCUSDT',
-              name: 'Bitcoin / USDT',
-              shortName: 'BTC',
-              exchange: 'Binance',
-              market: 'crypto',
-              pricePrecision: 2,
-              volumePrecision: 5
-            })}
-          >
-            Trade
-          </button>
+          <div class="crypto-dashboard__segmented">
+            <button class="crypto-dashboard__seg-btn crypto-dashboard__seg-btn--active">
+              Dashboard
+            </button>
+            <button 
+              class="crypto-dashboard__seg-btn"
+              onClick={() => handleCoinClick({
+                ticker: 'BTCUSDT',
+                name: 'Bitcoin / USDT',
+                shortName: 'BTC',
+                exchange: 'Binance',
+                market: 'crypto',
+                pricePrecision: 2,
+                volumePrecision: 5
+              })}
+            >
+              Trade
+            </button>
+          </div>
         </nav>
       </header>
 
