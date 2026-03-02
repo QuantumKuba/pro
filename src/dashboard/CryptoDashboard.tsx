@@ -7,8 +7,7 @@ import { createMemo, createSignal, For, onCleanup, onMount, Show, type Component
 import { type SymbolInfo } from '../types'
 import watchlistService from '../WatchlistService'
 
-import { MarketOverview } from './MarketOverview'
-import { TopMoversWidget } from './TopMoversWidget'
+import { MacroDashboardSection } from './MacroDashboardSection'
 
 import './dashboard.less'
 
@@ -299,7 +298,7 @@ export const CryptoDashboard: Component<CryptoDashboardProps> = (props) => {
           <div class="dashboard-card__header market-hero__header">
             <div>
               <h2 class="dashboard-card__title">Market Pulse</h2>
-              <p class="market-hero__subtitle">TradingView-inspired crypto home with your starred and watched flow.</p>
+              <p class="market-hero__subtitle">Your crypto home </p>
             </div>
             <input
               class="market-hero__search"
@@ -424,8 +423,7 @@ export const CryptoDashboard: Component<CryptoDashboardProps> = (props) => {
         </section>
 
         <div class="crypto-dashboard__grid">
-          <MarketOverview />
-          <TopMoversWidget onCoinClick={handleCoinClick} />
+          <MacroDashboardSection />
         </div>
       </main>
     </div>
