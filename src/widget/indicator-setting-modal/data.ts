@@ -144,6 +144,16 @@ export default {
     { paramNameKey: 'lagging_span_period', precision: 0, min: 1, default: 52 },
     { paramNameKey: 'displacement', precision: 0, min: 1, default: 26 }
   ],
+  KELTNER: [
+    { paramNameKey: 'keltner_basis_period', precision: 0, min: 1, default: 20 },
+    { paramNameKey: 'keltner_atr_period', precision: 0, min: 1, default: 20 },
+    { paramNameKey: 'keltner_multiplier_1', precision: 2, min: 0, default: 1 },
+    { paramNameKey: 'keltner_multiplier_2', precision: 2, min: 0, default: 2 },
+    { paramNameKey: 'keltner_multiplier_3', precision: 2, min: 0, default: 3 },
+    { paramNameKey: 'keltner_source_mode', precision: 0, min: 0, default: 1 },
+    { paramNameKey: 'keltner_basis_ma_mode', precision: 0, min: 0, default: 0 },
+    { paramNameKey: 'keltner_atr_ma_mode', precision: 0, min: 0, default: 3 }
+  ],
   SVP: [
     { paramNameKey: 'vp_num_bins', precision: 0, min: 4, default: 24 },
     { paramNameKey: 'vp_va_percent', precision: 0, min: 10, default: 70 },

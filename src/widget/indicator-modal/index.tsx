@@ -47,7 +47,7 @@ const IndicatorModal: Component<IndicatorModalProps> = props => {
         class="klinecharts-pro-indicator-modal-list">
         <li class="title">{i18n('main_indicator', props.locale)}</li>
         {
-          ['MA', 'EMA', 'SMA', 'BOLL', 'SAR', 'BBI', 'ICHIMOKU', 'SVP', 'VRVP'].map(name => {
+          ['MA', 'EMA', 'SMA', 'BOLL', 'SAR', 'BBI', 'ICHIMOKU', 'KELTNER', 'SVP', 'VRVP'].map(name => {
             const checked = props.mainIndicators.includes(name)
             return (
               <li

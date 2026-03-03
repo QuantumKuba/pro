@@ -13,17 +13,20 @@
  */
 
 import ichimokuCloud from './ichimokuCloud'
+import keltnerChannel from './keltnerChannel'
 import sessionVolumeProfile from './sessionVolumeProfile'
 import visibleRangeVolumeProfile from './visibleRangeVolumeProfile'
 
 export {
   ichimokuCloud,
+  keltnerChannel,
   sessionVolumeProfile,
   visibleRangeVolumeProfile
 }
 
 const indicators = [
   ichimokuCloud,
+  keltnerChannel,
   sessionVolumeProfile,
   visibleRangeVolumeProfile
 ]
