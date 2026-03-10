@@ -268,7 +268,7 @@ export const CryptoDashboard: Component<CryptoDashboardProps> = (props) => {
     <div class="crypto-dashboard">
       <header class="crypto-dashboard__header">
         <img 
-          src={props.logoSrc || '/logo_with_text.svg'} 
+          src={props.logoSrc || '/logo.svg'} 
           alt="DeltaScope AI" 
           class="crypto-dashboard__logo"
         />

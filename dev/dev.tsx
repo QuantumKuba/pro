@@ -82,7 +82,7 @@ function App() {
       <Show when={state().view === 'dashboard'}>
         <CryptoDashboard 
           onNavigateToChart={handleNavigateToChart}
-          logoSrc="/logo_with_text.svg"
+          logoSrc="/logo.svg"
         />
       </Show>
       
@@ -90,7 +90,7 @@ function App() {
         <div class="chart-view">
           <header class="chart-view__header">
             <img 
-              src="/logo_with_text.svg" 
+              src="/logo.svg" 
               alt="DeltaScope AI" 
               class="chart-view__logo"
               onClick={handleBackToDashboard}
