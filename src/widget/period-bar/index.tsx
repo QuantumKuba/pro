@@ -35,6 +35,8 @@ export interface PeriodBarProps {
   onPeriodSettingClick: () => void
   onReplayClick: () => void
   onPriceAlertClick?: () => void
+  customDataActive?: boolean
+  onCustomDataToggle?: () => void
 }
 
 // Number of period buttons to keep visible at narrow breakpoint
@@ -226,6 +228,15 @@ const PeriodBar: Component<PeriodBarProps> = props => {
           <span>{i18n('price_alerts', props.locale)}</span>
         </div>
       </Show>
+      <div
+        class={`item tools ${props.customDataActive ? 'active' : ''}`}
+        data-tooltip={i18n('custom_data', props.locale)}
+        onClick={() => props.onCustomDataToggle?.()}>
+        <svg viewBox="0 0 20 20">
+          <path d="M3 2h14a1 1 0 011 1v14a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1zm1 3v2h12V5H4zm0 4v2h12V9H4zm0 4v2h12v-2H4z" />
+        </svg>
+        <span>{i18n('custom_data', props.locale)}</span>
+      </div>
       <div class="tools-overflow">
         <div
           class="tools-overflow-btn"
@@ -279,6 +290,12 @@ const PeriodBar: Component<PeriodBarProps> = props => {
                 <span>{i18n('price_alerts', props.locale)}</span>
               </div>
             </Show>
+            <div
+              class={`tools-overflow-item ${props.customDataActive ? 'active' : ''}`}
+              onClick={() => { props.onCustomDataToggle?.(); setToolsOpen(false) }}>
+              <svg viewBox="0 0 20 20"><path d="M3 2h14a1 1 0 011 1v14a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1zm1 3v2h12V5H4zm0 4v2h12V9H4zm0 4v2h12v-2H4z" /></svg>
+              <span>{i18n('custom_data', props.locale)}</span>
+            </div>
           </div>
         </Show>
       </div>

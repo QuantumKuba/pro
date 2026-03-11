@@ -78,4 +78,8 @@ export interface ChartPro {
   getInstanceApi(): Nullable<Chart>
   resize(): void
   dispose(): void
+  loadCustomData(symbol: SymbolInfo, candles: KLineData[], basePeriod?: Period): void
+  pushCustomUpdate(ticker: string, candle: KLineData): void
+  clearCustomData(): void
+  isCustomDataActive(): boolean
 }

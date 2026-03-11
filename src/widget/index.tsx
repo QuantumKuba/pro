@@ -24,11 +24,12 @@ import SymbolSearchModal from './symbol-search-modal'
 import ReplayBar from './replay-bar'
 import TradeLogModal from './trade-log-modal'
 import PriceAlertModal from './price-alert-modal'
+import CustomDataModal from './custom-data-modal'
 
 export {
   PeriodBar, DrawingBar, IndicatorModal,
   TimezoneModal, SettingModal, ScreenshotModal,
   IndicatorSettingModal, PeriodSettingModal, SymbolSearchModal,
-  ReplayBar, TradeLogModal, PriceAlertModal
+  ReplayBar, TradeLogModal, PriceAlertModal, CustomDataModal
 }
 export type { DrawingBarApi }

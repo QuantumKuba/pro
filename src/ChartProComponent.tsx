@@ -21,6 +21,7 @@ import {
   TooltipFeatureStyle,
   IndicatorTooltipData,
   FeatureType,
+  KLineData,
   registerYAxis
 } from 'klinecharts'
 
@@ -32,7 +33,7 @@ import { SelectDataSourceItem, Loading } from './component'
 import {
   PeriodBar, DrawingBar, IndicatorModal, TimezoneModal, SettingModal,
   ScreenshotModal, IndicatorSettingModal, SymbolSearchModal, PeriodSettingModal,
-  ReplayBar, PriceAlertModal
+  ReplayBar, PriceAlertModal, CustomDataModal
 } from './widget'
 import type { DrawingBarApi } from './widget'
 import RemoveIcon from './widget/drawing-bar/icons/remove'
@@ -45,6 +46,7 @@ import { translateTimezone } from './widget/timezone-modal/data'
 
 import { SymbolInfo, Period, ChartProOptions, ChartPro } from './types'
 import ChartDataLoader from './DataLoader'
+import CustomDatafeed from './CustomDatafeed'
 import ReplayController from './ReplayController'
 import { ReplayState, ReplaySpeed, DEFAULT_REPLAY_STATE } from './ReplayTypes'
 import priceAlertService, { PriceAlert } from './PriceAlertService'
@@ -499,6 +501,15 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
   const [replayActive, setReplayActive] = createSignal(false)
   const [replayState, setReplayState] = createSignal<ReplayState>({ ...DEFAULT_REPLAY_STATE })
 
+  // Custom data mode state
+  const [customDataActive, setCustomDataActive] = createSignal(false)
+  const [customDatafeed] = createSignal<CustomDatafeed>(new CustomDatafeed())
+  const [customDataModalVisible, setCustomDataModalVisible] = createSignal(false)
+
+  // Streaming state for API/WebSocket mode
+  let streamWs: WebSocket | null = null
+  let streamCleanup: (() => void) | null = null
+
   // Helper to trigger chart data reload (forces getBars to be called)
   const triggerChartReload = () => {
     const s = symbolSignal()
@@ -881,7 +892,26 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
     getPeriod: () => periodSignal()!,
     getInstanceApi: () => widgetSignal(),
     resize: () => widgetSignal()?.resize(),
-    dispose: () => { }
+    dispose: () => { },
+    loadCustomData: (symbol: SymbolInfo, candles: KLineData[], basePeriod?: Period) => {
+      // Exit replay if active
+      if (replayActive()) {
+        stopReplay()
+      }
+      customDatafeed().setData(symbol, candles, basePeriod)
+      props.dataloader.setDatafeed(customDatafeed())
+      setCustomDataActive(true)
+      setSymbol(symbol)
+    },
+    pushCustomUpdate: (ticker: string, candle: KLineData) => {
+      customDatafeed().pushUpdate(ticker, candle)
+    },
+    clearCustomData: () => {
+      customDatafeed().clearData()
+      props.dataloader.restoreDatafeed()
+      setCustomDataActive(false)
+    },
+    isCustomDataActive: () => customDataActive()
   })
 
   const documentResize = () => {
@@ -1461,6 +1491,83 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
           onClose={() => { setPriceAlertModalVisible(false) }}
         />
       </Show>
+      <Show when={customDataModalVisible()}>
+        <CustomDataModal
+          locale={locale()}
+          onClose={() => { setCustomDataModalVisible(false) }}
+          onLoad={(symbol, candles, basePeriod) => {
+            if (replayActive()) {
+              stopReplay()
+            }
+            customDatafeed().setData(symbol, candles, basePeriod)
+            props.dataloader.setDatafeed(customDatafeed())
+            setCustomDataActive(true)
+            setSymbol(symbol)
+            setCustomDataModalVisible(false)
+          }}
+          onStartStream={(symbol, basePeriod, wsUrl) => {
+            if (replayActive()) stopReplay()
+
+            // Initialize custom data mode with empty data
+            customDatafeed().setData(symbol, [], basePeriod)
+            props.dataloader.setDatafeed(customDatafeed())
+            setCustomDataActive(true)
+            setSymbol(symbol)
+            setCustomDataModalVisible(false)
+
+            // Expose global JavaScript API
+            const api = {
+              push: (candle: KLineData) => {
+                customDatafeed().pushUpdate(symbol.ticker, candle)
+              },
+              init: (candles: KLineData[]) => {
+                customDatafeed().setData(symbol, candles, basePeriod)
+                triggerChartReload()
+              },
+              clear: () => {
+                customDatafeed().clearData(symbol.ticker)
+                triggerChartReload()
+              },
+              get status() { return customDataActive() ? 'streaming' : 'idle' },
+              symbol
+            };
+            (window as any).__klineChartPro = api
+
+            // Connect WebSocket if URL provided
+            if (wsUrl) {
+              try {
+                const ws = new WebSocket(wsUrl)
+                ws.onmessage = (event) => {
+                  try {
+                    const msg = JSON.parse(event.data)
+                    if (Array.isArray(msg)) {
+                      customDatafeed().setData(symbol, msg, basePeriod)
+                      triggerChartReload()
+                    } else if (msg.type === 'history' && Array.isArray(msg.data)) {
+                      customDatafeed().setData(symbol, msg.data, basePeriod)
+                      triggerChartReload()
+                    } else if (msg.type === 'update' && msg.data) {
+                      customDatafeed().pushUpdate(symbol.ticker, msg.data)
+                    } else if (msg.timestamp !== undefined) {
+                      customDatafeed().pushUpdate(symbol.ticker, msg)
+                    }
+                  } catch (e) { console.warn('KLineChartPro: invalid WS message', e) }
+                }
+                ws.onerror = (e) => console.warn('KLineChartPro: WS error', e)
+                streamWs = ws
+              } catch (e) { console.warn('KLineChartPro: WS connection failed', e) }
+            }
+
+            streamCleanup = () => {
+              if (streamWs) {
+                streamWs.close()
+                streamWs = null
+              }
+              delete (window as any).__klineChartPro
+            }
+          }}
+        />
+      </Show>
       <PeriodBar
         locale={locale()}
         symbol={symbolSignal()!}
@@ -1468,6 +1575,7 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
         period={periodSignal()!}
         periods={props.periods}
         replayActive={replayActive()}
+        customDataActive={customDataActive()}
         onMenuClick={async () => {
           try {
             await startTransition(() => setDrawingBarVisible(!drawingBarVisible()))
@@ -1492,6 +1600,20 @@ const ChartProComponent: Component<ChartProComponentProps> = props => {
             stopReplay()
           } else {
             startReplay()
+          }
+        }}
+        onCustomDataToggle={() => {
+          if (customDataActive()) {
+            if (streamCleanup) {
+              streamCleanup()
+              streamCleanup = null
+            }
+            customDatafeed().clearData()
+            props.dataloader.restoreDatafeed()
+            setCustomDataActive(false)
+            triggerChartReload()
+          } else {
+            setCustomDataModalVisible(true)
           }
         }}
       />

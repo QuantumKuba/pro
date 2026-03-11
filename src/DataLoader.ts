@@ -6,6 +6,8 @@ import priceAlertService from "./PriceAlertService";
 
 export default class ChartDataLoader implements ChartDataLoaderType {
   private _datafeed: Datafeed;
+  private _originalDatafeed: Datafeed;
+  private _customDataActive: boolean = false;
   private _loading: boolean;
   private _subscriptionSuspended: boolean;
   private _subscriberId: string;
@@ -31,6 +33,7 @@ export default class ChartDataLoader implements ChartDataLoaderType {
   constructor(datafeed: Datafeed) {
     console.info('ChartDataLoader initialized');
     this._datafeed = datafeed;
+    this._originalDatafeed = datafeed;
     this._loading = false;
     this._subscriptionSuspended = false;
     this._subscriberId = `dl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -168,6 +171,19 @@ export default class ChartDataLoader implements ChartDataLoaderType {
     const get = async () => {
       const p = this._periodGetter()!
       const s = this._symbolGetter()!
+
+      // Custom data path: don't use wall-clock time range — pass full range
+      // so getHistoryKLineData returns all candles (aggregated to the requested
+      // period). Tell klinecharts there's no more data (more=false) to prevent
+      // backward loading from duplicating candles.
+      if (this._customDataActive) {
+        const kLineDataList = await this._datafeed.getHistoryKLineData(s, p, 0, Number.MAX_SAFE_INTEGER)
+        callback(kLineDataList, false)
+        this._loading = false
+        this._loadingVisibleSetter(false)
+        return
+      }
+
       const [to] = this.adjustFromTo(p, timestamp!, 1)
       const [from] = this.adjustFromTo(p, to, this._fetchLimit)
       const kLineDataList = await this._datafeed.getHistoryKLineData(s, p, from, to)
@@ -265,6 +281,48 @@ export default class ChartDataLoader implements ChartDataLoaderType {
    */
   get datafeed(): Datafeed {
     return this._datafeed;
+  }
+
+  /**
+   * Swap the active datafeed (e.g., to a CustomDatafeed for research data).
+   * Stores the original so it can be restored later.
+   * Mutually exclusive with replay mode.
+   */
+  setDatafeed(datafeed: Datafeed): void {
+    // Exit replay mode if active
+    if (this._replayMode) {
+      this.clearReplayMode();
+    }
+    // Unsubscribe from current feed
+    if (this._lastSubscribedSymbol && this._lastSubscribedPeriod) {
+      this._datafeed.unsubscribe(this._lastSubscribedSymbol, this._lastSubscribedPeriod, this._subscriberId);
+      this._lastSubscribedSymbol = null;
+      this._lastSubscribedPeriod = null;
+    }
+    this._datafeed = datafeed;
+    this._customDataActive = true;
+  }
+
+  /**
+   * Restore the original datafeed that was passed to the constructor.
+   */
+  restoreDatafeed(): void {
+    if (!this._customDataActive) return;
+    // Unsubscribe from custom feed
+    if (this._lastSubscribedSymbol && this._lastSubscribedPeriod) {
+      this._datafeed.unsubscribe(this._lastSubscribedSymbol, this._lastSubscribedPeriod, this._subscriberId);
+      this._lastSubscribedSymbol = null;
+      this._lastSubscribedPeriod = null;
+    }
+    this._datafeed = this._originalDatafeed;
+    this._customDataActive = false;
+  }
+
+  /**
+   * Whether a custom datafeed is currently active (not the original).
+   */
+  get isCustomDataActive(): boolean {
+    return this._customDataActive;
   }
 
   /**

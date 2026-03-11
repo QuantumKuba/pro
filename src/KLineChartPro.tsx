@@ -14,7 +14,7 @@
 
 import { render } from 'solid-js/web'
 
-import { utils, Nullable, DeepPartial, Styles, Chart, dispose } from 'klinecharts'
+import { utils, Nullable, DeepPartial, Styles, Chart, KLineData, dispose } from 'klinecharts'
 
 import ChartProComponent, { widget } from './ChartProComponent'
 
@@ -148,5 +148,21 @@ export default class KLineChartPro implements ChartPro {
     this._disposeFn?.()
     this._container = null
     this._chartApi = null
+  }
+
+  loadCustomData(symbol: SymbolInfo, candles: KLineData[], basePeriod?: Period): void {
+    this._chartApi!.loadCustomData(symbol, candles, basePeriod)
+  }
+
+  pushCustomUpdate(ticker: string, candle: KLineData): void {
+    this._chartApi!.pushCustomUpdate(ticker, candle)
+  }
+
+  clearCustomData(): void {
+    this._chartApi!.clearCustomData()
+  }
+
+  isCustomDataActive(): boolean {
+    return this._chartApi!.isCustomDataActive()
   }
 }

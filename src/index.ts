@@ -20,6 +20,7 @@ import indicators from './indicator'
 import DefaultDatafeed from './DefaultDatafeed'
 import BinanceDatafeed from './BinanceDatafeed'
 import CompositeDatafeed from './CompositeDatafeed'
+import CustomDatafeed from './CustomDatafeed'
 import KLineChartPro from './KLineChartPro'
 
 import { LayoutManager, LayoutSelector } from './layout'
@@ -43,6 +44,7 @@ export {
   DefaultDatafeed,
   BinanceDatafeed,
   CompositeDatafeed,
+  CustomDatafeed,
   KLineChartPro,
   LayoutManager,
   LayoutSelector,

@@ -59,6 +59,7 @@ const formatChange = (change: number): string => {
 }
 
 const formatRelativeTime = (timestamp: number): string => {
+  if (!Number.isFinite(timestamp)) return ''
   const diffMs = Date.now() - timestamp
   const mins = Math.floor(diffMs / 60000)
   const hours = Math.floor(mins / 60)
@@ -410,7 +411,7 @@ export const CryptoDashboard: Component<CryptoDashboardProps> = (props) => {
                     <Show when={news().length > 0} fallback={<p class="side-panel__empty">News feed is unavailable right now.</p>}>
                       <For each={news()}>
                         {(item) => (
-                          <a class="news-item" href={item.url} target="_blank" rel="noreferrer">
+                          <a class="news-item" href={item.url.startsWith('http') ? item.url : '#'} target="_blank" rel="noreferrer noopener">
                             <span class="news-item__title">{item.title}</span>
                             <span class="news-item__meta">{item.source} · {formatRelativeTime(item.publishedAt)}</span>
                           </a>
